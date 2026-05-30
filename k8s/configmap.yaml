@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backups-microservice-config
+  namespace: statex-apps
+  labels:
+    app: backups-microservice
+    managed-by: k8s-migration
+data:
+  NODE_ENV: "production"
+  SERVICE_NAME: "backups-microservice"
+  DOMAIN: "backups.alfares.cz"
+  PORT: "3398"
+  AUTH_SERVICE_URL: "http://auth-microservice.statex-apps.svc.cluster.local:3370"
+  LOGGING_SERVICE_URL: "http://logging-microservice.statex-apps.svc.cluster.local:3367"
+  LOGGING_SERVICE_API_PATH: "/api/logs"
+  NOTIFICATION_SERVICE_URL: "http://notifications-microservice.statex-apps.svc.cluster.local:3368"
+  MONITORING_SERVICE_URL: "http://monitoring-microservice.statex-apps.svc.cluster.local:3395"
+  MINIO_SERVICE_URL: "http://minio-microservice.statex-apps.svc.cluster.local:9000"
+  MINIO_BACKUP_BUCKET: "backups"
+  DB_HOST: "192.168.88.53"
+  DB_PORT: "5432"
+  DB_USER: "dbadmin"
+  DB_NAME: "backups"
+  REDIS_HOST: "192.168.88.53"
+  REDIS_PORT: "6379"
+  BACKUP_SCHEDULE_DB: "0 2 * * *"
+  BACKUP_RETENTION_DAYS: "30"

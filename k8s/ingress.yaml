@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backups-microservice
+  namespace: statex-apps
+  labels:
+    app: backups-microservice
+    managed-by: k8s-migration
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - backups.alfares.cz
+      secretName: backups-microservice-tls
+  rules:
+    - host: backups.alfares.cz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: backups-microservice
+                port:
+                  number: 3398
