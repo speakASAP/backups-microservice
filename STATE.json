@@ -1,0 +1,6 @@
+{
+  "stage": "bootstrap",
+  "health": "unknown",
+  "last_updated": "2026-05-30",
+  "notes": "Scaffold complete. Vault secrets and K8s deploy pending."
+}
