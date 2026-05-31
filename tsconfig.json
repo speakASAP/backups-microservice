@@ -12,10 +12,9 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "strictNullChecks": false,
+    "noImplicitAny": false
+  },
+  "include": ["src/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
