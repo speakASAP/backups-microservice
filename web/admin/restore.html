@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backups Admin — Restore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-6">
+    <span class="text-lg font-bold text-white">🗄️ Backups Admin</span>
+    <a href="/admin" class="text-gray-400 hover:text-white">Dashboard</a>
+    <a href="/admin/jobs.html" class="text-gray-400 hover:text-white">Jobs</a>
+    <a href="/admin/restore.html" class="text-blue-400 font-medium">Restore</a>
+    <a href="/" class="ml-auto text-gray-500 hover:text-gray-300 text-sm">← Home</a>
+  </nav>
+
+  <div class="p-6 max-w-6xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Restore</h1>
+
+    <!-- Backup browser -->
+    <div class="bg-gray-800 rounded-lg overflow-hidden mb-8">
+      <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+        <h2 class="font-semibold">Available Backups</h2>
+        <button onclick="loadBackups()" class="text-sm text-blue-400 hover:text-blue-300">Refresh</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 border-b border-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left">ID</th>
+              <th class="px-6 py-3 text-left">Job</th>
+              <th class="px-6 py-3 text-left">Status</th>
+              <th class="px-6 py-3 text-left">Started</th>
+              <th class="px-6 py-3 text-left">Triggered by</th>
+              <th class="px-6 py-3 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody id="backups-table">
+            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Restore form -->
+    <div id="restore-form" class="hidden bg-gray-800 rounded-lg p-6 mb-8">
+      <h2 class="font-semibold mb-4">Create Restore Request</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Backup Run ID</label>
+          <input id="r-run-id" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" readonly>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Restore Target ID (UUID)</label>
+          <input id="r-target-id" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" placeholder="Target where data will be restored">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button onclick="submitRestore()" class="bg-red-600 hover:bg-red-500 text-white text-sm px-4 py-2 rounded transition">⚠ Submit Restore</button>
+        <button onclick="document.getElementById('restore-form').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded transition">Cancel</button>
+      </div>
+      <p class="text-xs text-red-400 mt-2">Warning: This will overwrite data in the target database.</p>
+    </div>
+
+    <!-- Restore history -->
+    <div class="bg-gray-800 rounded-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-700">
+        <h2 class="font-semibold">Restore History</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-gray-400 border-b border-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left">ID</th>
+              <th class="px-6 py-3 text-left">Target</th>
+              <th class="px-6 py-3 text-left">Status</th>
+              <th class="px-6 py-3 text-left">Requested by</th>
+              <th class="px-6 py-3 text-left">Created</th>
+            </tr>
+          </thead>
+          <tbody id="restore-table">
+            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('backups_token') || '';
+    const headers = () => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
+
+    function statusBadge(s) {
+      const map = { success: 'bg-green-900 text-green-300', completed: 'bg-green-900 text-green-300', failed: 'bg-red-900 text-red-300', running: 'bg-yellow-900 text-yellow-300', pending: 'bg-blue-900 text-blue-300' };
+      return `<span class="px-2 py-0.5 rounded text-xs font-medium ${map[s] || 'bg-gray-700 text-gray-300'}">${s}</span>`;
+    }
+
+    async function loadBackups() {
+      const r = await fetch('/backups?limit=50', { headers: headers() });
+      const runs = await r.json();
+      const tbody = document.getElementById('backups-table');
+      if (!Array.isArray(runs) || runs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No backups yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = runs.map(r => `<tr class="border-t border-gray-700">
+        <td class="px-6 py-3 font-mono text-xs text-gray-400">${r.id?.slice(0,12)}…</td>
+        <td class="px-6 py-3">${r.job?.name || r.job_id?.slice(0,8) || '—'}</td>
+        <td class="px-6 py-3">${statusBadge(r.status)}</td>
+        <td class="px-6 py-3 text-gray-400">${r.started_at ? new Date(r.started_at).toLocaleString() : '—'}</td>
+        <td class="px-6 py-3 text-gray-400">${r.triggered_by || '—'}</td>
+        <td class="px-6 py-3">${r.status === 'success' ? `<button onclick="startRestore('${r.id}')" class="text-blue-400 hover:text-blue-300 text-xs">Restore</button>` : '—'}</td>
+      </tr>`).join('');
+    }
+
+    async function loadRestores() {
+      const r = await fetch('/restore', { headers: headers() });
+      const requests = await r.json();
+      const tbody = document.getElementById('restore-table');
+      if (!Array.isArray(requests) || requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No restore requests yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = requests.map(r => `<tr class="border-t border-gray-700">
+        <td class="px-6 py-3 font-mono text-xs text-gray-400">${r.id?.slice(0,12)}…</td>
+        <td class="px-6 py-3">${r.target?.name || r.target_id?.slice(0,8) || '—'}</td>
+        <td class="px-6 py-3">${statusBadge(r.status)}</td>
+        <td class="px-6 py-3 text-gray-400">${r.requested_by || '—'}</td>
+        <td class="px-6 py-3 text-gray-400">${r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
+      </tr>`).join('');
+    }
+
+    function startRestore(runId) {
+      document.getElementById('r-run-id').value = runId;
+      document.getElementById('r-target-id').value = '';
+      document.getElementById('restore-form').classList.remove('hidden');
+      document.getElementById('restore-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function submitRestore() {
+      const backup_run_id = document.getElementById('r-run-id').value;
+      const target_id = document.getElementById('r-target-id').value;
+      if (!target_id) { alert('Please enter a target ID'); return; }
+      if (!confirm('This will overwrite data in the target database. Proceed?')) return;
+      const r = await fetch('/restore', { method: 'POST', headers: headers(), body: JSON.stringify({ backup_run_id, target_id }) });
+      document.getElementById('restore-form').classList.add('hidden');
+      if (r.ok) { alert('Restore request submitted'); loadRestores(); }
+      else alert('Error: ' + await r.text());
+    }
+
+    loadBackups();
+    loadRestores();
+    setInterval(loadRestores, 15000);
+  </script>
+</body>
+</html>
