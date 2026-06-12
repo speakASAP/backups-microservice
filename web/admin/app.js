@@ -1,5 +1,4 @@
 const store = {
-  token: localStorage.getItem('backups_token') || '',
   summary: null,
   targets: [],
   jobs: [],
@@ -16,7 +15,6 @@ function $(id) {
 function headers(json = false) {
   return {
     ...(json ? { 'Content-Type': 'application/json' } : {}),
-    ...(store.token ? { Authorization: `Bearer ${store.token}` } : {}),
   };
 }
 
@@ -52,27 +50,6 @@ function showNotice(message, type = 'info') {
 function hideNotice() {
   const el = $('notice');
   if (el) el.classList.add('hidden');
-}
-
-function initTokenControl() {
-  const input = $('token-input');
-  if (input) input.value = store.token;
-  document.querySelectorAll('[data-action="save-token"]').forEach((button) => {
-    button.addEventListener('click', () => {
-      store.token = input?.value.trim() || '';
-      if (store.token) localStorage.setItem('backups_token', store.token);
-      else localStorage.removeItem('backups_token');
-      showNotice(store.token ? 'Token saved for this browser.' : 'Token cleared.');
-      loadPage();
-    });
-  });
-}
-
-function requireTokenBeforeLoad() {
-  if (store.token) return false;
-  showNotice('Enter an admin JWT or service token to load backup data.');
-  renderEmptyStates('Authorization required.');
-  return true;
 }
 
 function statusBadge(status) {
@@ -146,8 +123,8 @@ async function loadRawCollections() {
 }
 
 async function loadPage() {
+  if (!page) return;
   hideNotice();
-  if (requireTokenBeforeLoad()) return;
   try {
     if (page === 'dashboard') {
       await loadSummary();
@@ -161,12 +138,43 @@ async function loadPage() {
     }
   } catch (error) {
     const isAuthError = /authorization|unauthorized|token/i.test(error.message);
-    showNotice(isAuthError
-      ? 'Authorization failed. Check the admin JWT or service token and save it again.'
-      : error.message,
-    isAuthError ? 'error' : 'info');
+    if (isAuthError) {
+      window.location.href = `/admin/login?returnTo=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    showNotice(error.message, 'info');
     renderEmptyStates(isAuthError ? 'Authorization failed.' : 'Unable to load data.');
   }
+}
+
+async function login(event) {
+  event.preventDefault();
+  const submit = $('login-submit');
+  if (submit) submit.disabled = true;
+  hideNotice();
+  try {
+    const response = await fetch('/admin/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: $('login-email')?.value.trim(),
+        password: $('login-password')?.value,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message || 'Login failed');
+    const returnTo = new URLSearchParams(window.location.search).get('returnTo') || '/admin';
+    window.location.href = returnTo.startsWith('/admin') ? returnTo : '/admin';
+  } catch (error) {
+    showNotice(error.message, 'error');
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+
+async function logout() {
+  await fetch('/admin/logout', { method: 'POST' });
+  window.location.href = '/admin/login';
 }
 
 function renderDashboard() {
@@ -354,6 +362,7 @@ document.addEventListener('click', async (event) => {
   const action = target.dataset.action;
   try {
     if (action === 'refresh') await loadPage();
+    if (action === 'logout') await logout();
     if (action === 'show-job-form') $('job-form-panel')?.classList.remove('hidden');
     if (action === 'hide-job-form') $('job-form-panel')?.classList.add('hidden');
     if (action === 'hide-restore-form') $('restore-form-panel')?.classList.add('hidden');
@@ -380,6 +389,7 @@ document.addEventListener('click', async (event) => {
 
 document.addEventListener('submit', async (event) => {
   try {
+    if (event.target.id === 'login-form') await login(event);
     if (event.target.id === 'job-form') await createJob(event);
     if (event.target.id === 'restore-form') await submitRestore(event);
   } catch (error) {
@@ -387,6 +397,5 @@ document.addEventListener('submit', async (event) => {
   }
 });
 
-initTokenControl();
 loadPage();
-setInterval(loadPage, page === 'restore' ? 15000 : 30000);
+if (page) setInterval(loadPage, page === 'restore' ? 15000 : 30000);
