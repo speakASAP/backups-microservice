@@ -2,7 +2,7 @@
 
 ```yaml
 id: BAK-G5
-status: ready
+status: done
 owner: orchestrator
 created: 2026-06-12
 last_updated: 2026-06-12
@@ -41,3 +41,20 @@ docs/orchestrator/backup-intent-plan.md
 - Run `npm run build`.
 - Run relevant tests.
 - Verify migration/backward compatibility plan before schema changes.
+
+
+## Completion Evidence
+
+Completed on branch `codex/backups-goal-05-coverage-model`.
+
+- Added coverage metadata fields to backup targets: service owner, source category, criticality, RPO/RTO, restore class, Kubernetes namespace, and coverage notes.
+- Added additive migration `1748563500000-CoverageModel` with nullable/defaulted columns for backward compatibility.
+- Dashboard summary now returns coverage stats and discovered unprotected sources without exposing secrets or backup artifact paths.
+- Admin dashboard shows coverage classes, configured target metadata, and discovered unprotected sources; target creation can capture coverage metadata for PostgreSQL sources.
+- Documented contracts for MinIO bucket, Kubernetes resource, secret reference, and PVC source classes before implementing those backup engines.
+
+Validation:
+
+- `npm run build` passed.
+- `npm test -- --runInBand` passed with 2 suites and 5 tests.
+- `node --check web/admin/app.js` passed.

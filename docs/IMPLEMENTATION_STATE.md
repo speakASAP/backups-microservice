@@ -17,15 +17,15 @@ Continue implementation of this project.
 To start the next specific goal:
 
 ```text
-BACKUPS ORCHESTRATOR: implement goal number 5
+BACKUPS ORCHESTRATOR: implement goal number 6
 ```
 
 ## Current Status
 
 - Active goal: none
-- Active branch: `codex/backups-goal-04-restore-verification`
-- Current wave: Wave 2 - Restore verification complete; ready for coverage model review
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence
+- Active branch: `codex/backups-goal-05-coverage-model`
+- Current wave: Wave 3 - Coverage model complete; ready for safety controls
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Coverage Model
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -48,8 +48,8 @@ BACKUPS ORCHESTRATOR: implement goal number 5
 | 02 | `implementation-goals/GOAL-02-operator-dashboard.md` | done | `main` | 01 | Existing admin frontend prepared |
 | 03 | `implementation-goals/GOAL-03-dashboard-summary-api.md` | done | `main` | 01, 02 | Existing summary API prepared |
 | 04 | `implementation-goals/GOAL-04-restore-verification.md` | done | `codex/backups-goal-04-restore-verification` | 03 | Validated on remote filesystem |
-| 05 | `implementation-goals/GOAL-05-coverage-model.md` | ready | `codex/backups-goal-05-coverage-model` | 03 | Next domain goal after owner review |
-| 06 | `implementation-goals/GOAL-06-safety-audit-controls.md` | ready | `codex/backups-goal-06-safety-audit-controls` | 04 | Must preserve restore and retention safety |
+| 05 | `implementation-goals/GOAL-05-coverage-model.md` | done | `codex/backups-goal-05-coverage-model` | 03 | Validated on remote filesystem |
+| 06 | `implementation-goals/GOAL-06-safety-audit-controls.md` | ready | `codex/backups-goal-06-safety-audit-controls` | 04, 05 | Next domain goal; must preserve restore and retention safety |
 | 07 | `implementation-goals/GOAL-07-production-readiness.md` | ready | `codex/backups-goal-07-production-readiness` | 04, 05, 06 | Final smoke/deploy readiness |
 
 ## Execution Waves
@@ -98,6 +98,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-12: Completed BAK-G5 coverage model on `codex/backups-goal-05-coverage-model`. Added target coverage metadata and additive migration, documented source contracts for PostgreSQL, MinIO buckets, Kubernetes resources, secret references, and PVCs, and updated dashboard/admin UI to show coverage classes plus discovered unprotected sources. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 2 suites and 5 tests; `node --check web/admin/app.js` passed. Secret scan found no new secret values.
 2026-06-12: Completed BAK-G4 restore verification evidence on `codex/backups-goal-04-restore-verification`. Added backup run verification lifecycle metadata and migration, recorded pending/skipped verification evidence in backup flow, split backup success from verification pending notification events, sanitized public backup run serialization to omit WAL-G output and storage artifact paths, and rendered verification state/reason in dashboard and restore UI. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 2 suites and 5 tests; `node --check web/admin/app.js` passed. Resolved: `.gitignore` now limits backup ignores to artifact-style patterns, so active backup source, entity, test, and intent-plan paths are visible to Git.
 2026-06-12: Added project-local Intent Preservation System compliance docs and Goal 04 pre-coding artifacts. New docs: docs/process/INTENT_PRESERVATION_SYSTEM.md, docs/process/PROJECT_INVARIANTS.md, implementation-goals/GOAL-04-restore-verification.execution-plan.md, implementation-goals/GOAL-04-restore-verification.context.md, implementation-goals/GOAL-04-restore-verification.coding-prompt.md, implementation-goals/GOAL-04-restore-verification.validation.md. Documentation-only change. Validation: required IPS chain and operational gate references reviewed locally.
 2026-06-12: Added Goalkeeper-style orchestration layer for Backups: AGENTS continuation entrypoint, implementation orchestrator, implementation state, agent orchestration policy, branch workflow, operational gates, implementation-goals index, goal prompts, templates, and next-goal script. Documentation-only change. Validation: `./scripts/next_goal.sh` returns Goal 04 as next action; markdown files reviewed for path consistency.
@@ -122,20 +123,20 @@ Next command:
 
 - Whether restore verification should run against an isolated database, disposable namespace, or service-specific verification hook.
 - Whether backup run deletion is fully disabled or owner-gated with explicit approval metadata.
-- Which service inventory source becomes canonical for coverage gaps.
+- Which service inventory source becomes canonical for coverage gaps. Goal 05 currently treats Kubernetes discovery as operator evidence, not the canonical inventory source.
 
 ## Next Action
 
-Review Goal 04 and then implement Goal 05 coverage model:
+Implement Goal 06 safety and audit controls:
 
 ```text
-BACKUPS ORCHESTRATOR: implement goal number 5
+BACKUPS ORCHESTRATOR: implement goal number 6
 ```
 
 Source documents:
 
 ```text
-implementation-goals/GOAL-05-coverage-model.md
+implementation-goals/GOAL-06-safety-audit-controls.md
 docs/orchestrator/INTENT.md
 docs/orchestrator/backup-intent-plan.md
 docs/IMPLEMENTATION_ORCHESTRATOR.md

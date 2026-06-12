@@ -109,6 +109,24 @@ function cronLabel(value) {
   return labels[value] || value || '-';
 }
 
+function sourceLabel(value) {
+  const labels = {
+    postgres_database: 'PostgreSQL database',
+    minio_bucket: 'MinIO bucket',
+    kubernetes_resource: 'Kubernetes resource',
+    secret_reference: 'Secret reference',
+    pvc: 'Persistent volume',
+    service: 'Service',
+    logical_postgres: 'Logical PostgreSQL restore',
+    object_restore: 'Object restore',
+    manifest_reapply: 'Manifest reapply',
+    secret_rehydration: 'Secret rehydration',
+    volume_restore: 'Volume restore',
+    manual: 'Manual runbook',
+  };
+  return labels[value] || value || '-';
+}
+
 async function loadSummary() {
   const [summary, discovery] = await Promise.all([
     api('/dashboard/summary'),
@@ -202,21 +220,38 @@ async function logout() {
 function renderDashboard() {
   const summary = store.summary || {};
   const stats = summary.stats || {};
-  $('metric-protected').textContent = `${summary.coverage?.filter((item) => item.protected).length || 0}/${stats.targets_total || 0}`;
+  const discoveredGaps = stats.unprotected_discovered_sources || 0;
+  $('metric-protected').textContent = `${stats.protected_sources || 0}/${(stats.targets_total || 0) + discoveredGaps}`;
   $('metric-jobs').textContent = `${stats.jobs_enabled || 0}/${stats.jobs_total || 0}`;
   $('metric-runs').textContent = stats.runs_24h ?? 0;
   $('metric-failed').textContent = stats.failed_24h ?? 0;
   $('metric-latest').innerHTML = statusBadge(stats.latest_status);
 
   const coverage = $('coverage-list');
-  coverage.innerHTML = (summary.coverage || []).length
-    ? summary.coverage.map(renderCoverageCard).join('')
+  const unprotected = summary.unprotected_discovered_sources || [];
+  coverage.innerHTML = (summary.coverage || []).length || unprotected.length
+    ? [
+      ...(summary.coverage || []).map(renderCoverageCard),
+      ...unprotected.map(renderUnprotectedSourceCard),
+    ].join('')
     : '<div class="muted">No backup targets are configured.</div>';
 
+  renderCoverageStats(summary.coverage_stats || []);
   renderSettings(summary.storage || {}, summary.guardrails || {});
   renderDiscovery(store.discovery || {});
   renderDestinations(summary.storage || {});
   renderRunsTable($('runs-table'), summary.recent_runs || []);
+}
+
+function renderCoverageStats(stats) {
+  const list = $('coverage-stats');
+  if (!list) return;
+  list.innerHTML = stats.length
+    ? stats.map((item) => `<article class="stat-card">
+      <strong>${escapeHtml(item.protected)}/${escapeHtml(item.total)}</strong>
+      <span>${escapeHtml(sourceLabel(item.source_category))}</span>
+    </article>`).join('')
+    : '<div class="muted">No coverage classes are tracked yet.</div>';
 }
 
 function renderCoverageCard(item) {
@@ -230,17 +265,42 @@ function renderCoverageCard(item) {
       <h3>${escapeHtml(target.name || target.database_name || target.id)}</h3>
       <div class="meta-line">
         <span>${escapeHtml(target.type || 'postgres')}</span>
+        <span>${escapeHtml(sourceLabel(target.source_category || 'postgres_database'))}</span>
+        <span>owner ${escapeHtml(target.service_owner || 'unassigned')}</span>
+        <span>${escapeHtml(target.criticality || 'standard')}</span>
+      </div>
+      <div class="meta-line">
         <span>${escapeHtml(target.host || '-')}:${escapeHtml(target.port || '-')}</span>
         <span>database ${escapeHtml(target.database_name || '-')}</span>
+        <span>namespace ${escapeHtml(target.kubernetes_namespace || '-')}</span>
+        <span>restore ${escapeHtml(sourceLabel(target.restore_class || 'logical_postgres'))}</span>
       </div>
       <div class="meta-line">
         <span>schedule ${escapeHtml(schedule)}</span>
         <span>retention ${escapeHtml(retention)}</span>
+        <span>RPO ${escapeHtml(target.rpo_minutes ? `${target.rpo_minutes}m` : '-')}</span>
+        <span>RTO ${escapeHtml(target.rto_minutes ? `${target.rto_minutes}m` : '-')}</span>
         <span>last success ${escapeHtml(formatDate(item.last_success?.completed_at))}</span>
         <span>verification ${item.last_verification ? statusBadge(item.last_verification.status) : statusBadge('unknown')}</span>
       </div>
+      ${target.coverage_notes ? `<p class="muted">${escapeHtml(target.coverage_notes)}</p>` : ''}
     </div>
     <div>${statusBadge(item.protected ? 'enabled' : 'disabled')}</div>
+  </article>`;
+}
+
+function renderUnprotectedSourceCard(source) {
+  return `<article class="coverage-card gap">
+    <div>
+      <h3>${escapeHtml(source.name)}</h3>
+      <div class="meta-line">
+        <span>${escapeHtml(sourceLabel(source.source_category))}</span>
+        <span>namespace ${escapeHtml(source.namespace || '-')}</span>
+        <span>${escapeHtml(source.host || '-')}</span>
+      </div>
+      <p class="muted">${escapeHtml(source.reason || 'No backup target is configured.')}</p>
+    </div>
+    <div>${statusBadge(source.backup_ready ? 'unprotected' : 'contract pending')}</div>
   </article>`;
 }
 
@@ -298,6 +358,8 @@ function renderDatabaseOption(service) {
       data-protect-db="true"
       data-name="${escapeHtml(service.name)}"
       data-host="${escapeHtml(service.host)}"
+      data-namespace="${escapeHtml(service.namespace || '')}"
+      data-owner="${escapeHtml(service.app || service.name)}"
       data-port="${escapeHtml(service.suggested_port || 5432)}"
       data-database="${escapeHtml(service.suggested_database || '')}">
       ${protectedTarget ? 'Review' : 'Protect'}
@@ -388,9 +450,13 @@ function renderJobs() {
       <h3>${escapeHtml(target.name)}</h3>
       <div class="meta-line">
         <span>${escapeHtml(target.type || 'postgres')}</span>
+        <span>${escapeHtml(sourceLabel(target.source_category || 'postgres_database'))}</span>
+        <span>owner ${escapeHtml(target.service_owner || 'unassigned')}</span>
+        <span>${escapeHtml(target.criticality || 'standard')}</span>
         <span>${escapeHtml(target.host)}:${escapeHtml(target.port)}</span>
         <span>${escapeHtml(target.database_name)}</span>
-        <span>secret ref ${escapeHtml(target.vault_secret_ref || 'not set')}</span>
+        <span>RPO ${escapeHtml(target.rpo_minutes ? `${target.rpo_minutes}m` : '-')}</span>
+        <span>RTO ${escapeHtml(target.rto_minutes ? `${target.rto_minutes}m` : '-')}</span>
       </div>
     </div>
     <div>${statusBadge(target.enabled ? 'enabled' : 'disabled')}</div>
@@ -473,6 +539,14 @@ async function createTarget(event) {
     port: Number($('target-port').value || 5432),
     database_name: $('target-database').value.trim(),
     vault_secret_ref: $('target-secret').value.trim() || undefined,
+    service_owner: $('target-owner').value.trim() || undefined,
+    source_category: $('target-source-category').value,
+    criticality: $('target-criticality').value,
+    rpo_minutes: Number($('target-rpo').value || 0) || undefined,
+    rto_minutes: Number($('target-rto').value || 0) || undefined,
+    restore_class: $('target-restore-class').value,
+    kubernetes_namespace: $('target-namespace').value.trim() || undefined,
+    coverage_notes: $('target-notes').value.trim() || undefined,
     enabled: true,
   };
   const createdTarget = await api('/targets', { method: 'POST', body: JSON.stringify(targetBody) });
@@ -492,6 +566,9 @@ async function createTarget(event) {
   $('target-port').value = 5432;
   $('target-retention').value = 7;
   $('target-cron').value = '0 2 * * *';
+  $('target-source-category').value = 'postgres_database';
+  $('target-criticality').value = 'standard';
+  $('target-restore-class').value = 'logical_postgres';
   showNotice('Backup target and schedule created.');
   await loadPage();
 }
@@ -561,6 +638,10 @@ document.addEventListener('click', async (event) => {
       $('target-host').value = target.dataset.host || '';
       $('target-port').value = target.dataset.port || 5432;
       $('target-database').value = target.dataset.database || '';
+      $('target-namespace').value = target.dataset.namespace || '';
+      $('target-owner').value = target.dataset.owner || '';
+      $('target-source-category').value = 'postgres_database';
+      $('target-restore-class').value = 'logical_postgres';
       $('target-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
       $('target-secret').focus();
     }
