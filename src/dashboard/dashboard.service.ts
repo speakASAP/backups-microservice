@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BackupRun, BackupRunStatus } from '../backup/entities/backup-run.entity';
+import { BackupRun, BackupRunStatus, VerificationStatus } from '../backup/entities/backup-run.entity';
 import { BackupJob } from '../jobs/entities/backup-job.entity';
 import { RestoreRequest, RestoreStatus } from '../restore/entities/restore-request.entity';
 import { BackupTarget } from '../targets/entities/backup-target.entity';
@@ -31,6 +31,12 @@ export class DashboardService {
     const recent24h = recentRuns.filter((run) => run.started_at && now - new Date(run.started_at).getTime() <= dayMs);
     const successfulRuns = recentRuns.filter((run) => run.status === BackupRunStatus.SUCCESS);
     const failed24h = recent24h.filter((run) => run.status === BackupRunStatus.FAILED);
+    const verificationPending = recentRuns.filter((run) => {
+      return run.verification_status === VerificationStatus.PENDING
+        || run.verification_status === VerificationStatus.VERIFYING
+        || run.verification_status === VerificationStatus.UNKNOWN;
+    });
+    const verificationFailed = recentRuns.filter((run) => run.verification_status === VerificationStatus.FAILED);
     const latestRun = recentRuns[0];
     const latestSuccess = successfulRuns[0];
 
@@ -62,7 +68,10 @@ export class DashboardService {
         destinations_total: destinations.length,
         destinations_enabled: destinations.filter((destination) => destination.enabled).length,
         latest_status: latestRun?.status || 'none',
+        latest_verification_status: latestRun?.verification_status || 'unknown',
         latest_success_at: latestSuccess?.completed_at || null,
+        verification_pending: verificationPending.length,
+        verification_failed: verificationFailed.length,
       },
       destinations,
       coverage: targets.map((target) => {
@@ -70,12 +79,19 @@ export class DashboardService {
         const targetRuns = recentRuns.filter((run) => targetJobs.some((job) => job.id === run.job_id));
         const lastRun = targetRuns[0];
         const lastSuccess = targetRuns.find((run) => run.status === BackupRunStatus.SUCCESS);
+        const lastVerification = targetRuns.find((run) => Boolean(run.verification_status));
         return {
           target,
           jobs: targetJobs,
           protected: target.enabled && targetJobs.some((job) => job.enabled),
-          last_run: lastRun || null,
-          last_success: lastSuccess || null,
+          last_run: lastRun ? this.serializeRun(lastRun) : null,
+          last_success: lastSuccess ? this.serializeRun(lastSuccess) : null,
+          last_verification: lastVerification ? {
+            run_id: lastVerification.id,
+            status: lastVerification.verification_status || VerificationStatus.UNKNOWN,
+            checked_at: lastVerification.verification_checked_at || null,
+            reason: lastVerification.verification_reason || null,
+          } : null,
           failed_runs_24h: targetRuns.filter((run) => {
             return run.status === BackupRunStatus.FAILED
               && run.started_at
@@ -83,9 +99,17 @@ export class DashboardService {
           }).length,
         };
       }),
-      recent_runs: recentRuns.slice(0, 20),
+      recent_runs: recentRuns.slice(0, 20).map((run) => this.serializeRun(run)),
       restore_requests: restores.slice(0, 20),
     };
+  }
+
+  private serializeRun(run: BackupRun) {
+    const { storage_path, walg_output, ...safeRun } = run as BackupRun & {
+      storage_path?: string;
+      walg_output?: string;
+    };
+    return safeRun;
   }
 
   private storageSettings() {

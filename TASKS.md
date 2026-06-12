@@ -13,11 +13,11 @@
 - [ ] Implement RestoresModule: restore from MinIO + verify
 - [ ] Add NotificationsModule integration (success/failure)
 - [ ] Add LoggingModule integration
-- [ ] Implement restore verification state and evidence
+- [x] Implement restore verification state and evidence
 - [ ] Add coverage model for service owner, RPO/RTO, source type, and criticality
 - [ ] Harden retention, backup-run deletion, and production restore approval controls
 - [ ] Production readiness review
 
 ## Orchestrated Next Action
 
-- [ ] `BAK-G4` Restore verification evidence
+- [ ] `BAK-G5` Coverage model for service owner, RPO/RTO, source type, and criticality

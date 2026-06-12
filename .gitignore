@@ -1,3 +1,9 @@
+# Backup artifacts only; do not ignore source paths that contain backup.
+*.backup
+*.backup.*
+*.bck
+*.bck.*
+*.bak
 *backup*
 *bck*
 
@@ -43,7 +49,6 @@ docker-compose.override.yml
 tmp/
 temp/
 *.tmp
-*.bak
 
 # Playwright MCP output
 .playwright-mcp/
@@ -55,9 +60,6 @@ k8s/secret.yaml
 **/client_secret*.json
 **/*.apps.googleusercontent.com.json
 
-# --- baseline: secrets-env-artifacts (synced across repos) ---
-
-*.bak*
 # Environment variables
 # OS files
 # Temporary files

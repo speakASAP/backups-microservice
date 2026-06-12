@@ -2,7 +2,7 @@
 
 ```yaml
 id: BAK-G4
-status: ready
+status: done
 owner: orchestrator
 created: 2026-06-12
 last_updated: 2026-06-12
@@ -78,3 +78,23 @@ Before source edits, complete:
 - validation report shell;
 - invariant checks for `BAK-INV-001`, `BAK-INV-002`, `BAK-INV-003`, `BAK-INV-004`, `BAK-INV-006`, `BAK-INV-008`, and `BAK-INV-009`;
 - documentation gate from `docs/process/OPERATIONAL_GATES.md`.
+
+## Completion Evidence
+
+Completed on branch `codex/backups-goal-04-restore-verification`.
+
+- Added backup run verification lifecycle fields and migration.
+- Successful backups now record verification as pending with a reason when no isolated verification runner is configured.
+- Failed backups now record verification as skipped with a reason.
+- Dashboard summary, admin dashboard, and restore view expose verification state and reason without exposing WAL-G output or storage artifact paths.
+- Notification events distinguish backup success from verification pending.
+
+Validation:
+
+- `npm run build` passed.
+- `npm test -- --runInBand` passed with 2 suites and 5 tests.
+- `node --check web/admin/app.js` passed.
+
+Repository hygiene:
+
+- .gitignore now uses artifact-only backup patterns, so active backup source, entity, test, and intent-plan files are visible to Git before commit preparation.

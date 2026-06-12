@@ -56,14 +56,20 @@ function hideNotice() {
 
 function statusBadge(status) {
   const value = status || 'none';
-  const kind = ['success', 'completed', 'enabled'].includes(value)
+  const kind = ['success', 'completed', 'enabled', 'verified'].includes(value)
     ? 'ok'
     : ['failed', 'disabled'].includes(value)
       ? 'bad'
-      : ['running', 'pending', 'verifying'].includes(value)
+      : ['running', 'pending', 'verifying', 'skipped', 'unknown'].includes(value)
         ? 'warn'
         : 'neutral';
   return `<span class="badge ${kind}">${escapeHtml(value)}</span>`;
+}
+
+function verificationBadge(run) {
+  const status = run?.verification_status || 'unknown';
+  const reason = run?.verification_reason ? ` title="${escapeHtml(run.verification_reason)}"` : '';
+  return `<span${reason}>${statusBadge(status)}</span>`;
 }
 
 function formatDate(value) {
@@ -231,6 +237,7 @@ function renderCoverageCard(item) {
         <span>schedule ${escapeHtml(schedule)}</span>
         <span>retention ${escapeHtml(retention)}</span>
         <span>last success ${escapeHtml(formatDate(item.last_success?.completed_at))}</span>
+        <span>verification ${item.last_verification ? statusBadge(item.last_verification.status) : statusBadge('unknown')}</span>
       </div>
     </div>
     <div>${statusBadge(item.protected ? 'enabled' : 'disabled')}</div>
@@ -353,11 +360,12 @@ function renderRunsTable(tbody, runs) {
   tbody.innerHTML = runs.length ? runs.map((run) => `<tr>
     <td>${escapeHtml(run.job?.name || shortId(run.job_id))}</td>
     <td>${statusBadge(run.status)}</td>
+    <td>${verificationBadge(run)}<div class="muted">${escapeHtml(run.verification_reason || '')}</div></td>
     <td>${escapeHtml(run.triggered_by || '-')}</td>
     <td>${escapeHtml(formatDate(run.started_at))}</td>
     <td>${escapeHtml(duration(run.started_at, run.completed_at))}</td>
-    <td class="mono">${escapeHtml(run.storage_path || '-')}</td>
-  </tr>`).join('') : '<tr><td colspan="6" class="muted">No backup runs found.</td></tr>';
+    <td>${escapeHtml(formatDate(run.verification_checked_at))}</td>
+  </tr>`).join('') : '<tr><td colspan="7" class="muted">No backup runs found.</td></tr>';
 }
 
 function renderJobs() {
@@ -396,10 +404,11 @@ function renderRestore() {
     <td class="mono">${escapeHtml(shortId(run.id))}</td>
     <td>${escapeHtml(run.job?.name || shortId(run.job_id))}</td>
     <td>${statusBadge(run.status)}</td>
+    <td>${verificationBadge(run)}<div class="muted">${escapeHtml(run.verification_reason || '')}</div></td>
     <td>${escapeHtml(formatDate(run.started_at))}</td>
     <td>${escapeHtml(run.triggered_by || '-')}</td>
     <td><button class="button small secondary" type="button" data-restore-run="${escapeHtml(run.id)}">Restore</button></td>
-  </tr>`).join('') : '<tr><td colspan="6" class="muted">No successful backup runs found.</td></tr>';
+  </tr>`).join('') : '<tr><td colspan="7" class="muted">No successful backup runs found.</td></tr>';
 
   $('restore-table').innerHTML = store.restores.length ? store.restores.map((request) => `<tr>
     <td class="mono">${escapeHtml(shortId(request.id))}</td>
