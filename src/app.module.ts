@@ -18,6 +18,7 @@ import { JwtRolesGuard } from './auth/jwt-roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { AuditModule } from "./audit/audit.module";
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     DestinationsModule,
     DiscoveryModule,
     DashboardModule,
+    AuditModule,
   ],
   controllers: [HealthController, InfoController],
   providers: [{ provide: APP_GUARD, useClass: JwtRolesGuard }],

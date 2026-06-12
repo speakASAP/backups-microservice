@@ -1,14 +1,15 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { BackupRun } from './entities/backup-run.entity';
-import { BackupJob } from '../jobs/entities/backup-job.entity';
-import { BackupService } from './backup.service';
-import { BackupController } from './backup.controller';
-import { WalgModule } from './walg.module';
-import { JobsModule } from '../jobs/jobs.module';
-import { NotificationsModule } from '../notifications/notifications.module';
-import { LoggerModule } from '../../shared/logger/logger.module';
-import { RetentionModule } from '../retention/retention.module';
+import { Module, forwardRef } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { BackupRun } from "./entities/backup-run.entity";
+import { BackupJob } from "../jobs/entities/backup-job.entity";
+import { BackupService } from "./backup.service";
+import { BackupController } from "./backup.controller";
+import { WalgModule } from "./walg.module";
+import { JobsModule } from "../jobs/jobs.module";
+import { NotificationsModule } from "../notifications/notifications.module";
+import { LoggerModule } from "../../shared/logger/logger.module";
+import { RetentionModule } from "../retention/retention.module";
+import { AuditModule } from "../audit/audit.module";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RetentionModule } from '../retention/retention.module';
     NotificationsModule,
     LoggerModule,
     forwardRef(() => RetentionModule),
+    AuditModule,
   ],
   providers: [BackupService],
   controllers: [BackupController],

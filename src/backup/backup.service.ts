@@ -1,22 +1,23 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { SchedulerRegistry, CronExpression } from '@nestjs/schedule';
-// Use the CronJob from @nestjs/schedule's own bundled cron to avoid version mismatch
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { CronJob } = require('@nestjs/schedule/node_modules/cron');
+import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { SchedulerRegistry } from "@nestjs/schedule";
+const { CronJob } = require("@nestjs/schedule/node_modules/cron");
 import {
   BackupRun,
   BackupRunStatus,
   TriggerType,
   VerificationStatus,
-} from './entities/backup-run.entity';
-import { BackupJob } from '../jobs/entities/backup-job.entity';
-import { JobsService } from '../jobs/jobs.service';
-import { WalgWrapperService } from './walg-wrapper.service';
-import { RetentionService } from '../retention/retention.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { LoggerService } from '../../shared/logger/logger.service';
+} from "./entities/backup-run.entity";
+import { DeleteBackupRunDto } from "./dto/delete-backup-run.dto";
+import { BackupJob } from "../jobs/entities/backup-job.entity";
+import { JobsService } from "../jobs/jobs.service";
+import { WalgWrapperService } from "./walg-wrapper.service";
+import { RetentionService } from "../retention/retention.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { AuditAction } from "../audit/audit-log.entity";
+import { AuditService } from "../audit/audit.service";
+import { LoggerService } from "../../shared/logger/logger.service";
 
 @Injectable()
 export class BackupService implements OnModuleInit {
@@ -27,6 +28,7 @@ export class BackupService implements OnModuleInit {
     private walg: WalgWrapperService,
     private retention: RetentionService,
     private notifications: NotificationsService,
+    private audit: AuditService,
     private logger: LoggerService,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
@@ -36,7 +38,7 @@ export class BackupService implements OnModuleInit {
     for (const job of jobs) {
       this.registerCron(job);
     }
-    this.logger.log(`Registered ${jobs.length} backup cron jobs`, 'BackupService');
+    this.logger.log(`Registered ${jobs.length} backup cron jobs`, "BackupService");
   }
 
   registerCron(job: BackupJob) {
@@ -44,37 +46,48 @@ export class BackupService implements OnModuleInit {
     try { this.schedulerRegistry.deleteCronJob(cronName); } catch {}
 
     const cron = new CronJob(job.schedule_cron, () => {
-      this.executeJob(job.id, TriggerType.SCHEDULER).catch((err) =>
-        this.logger.error(`Cron error job=${job.id}: ${err}`, err.stack, 'BackupService'),
+      this.executeJob(job.id, TriggerType.SCHEDULER, "scheduler").catch((err) =>
+        this.logger.error(`Cron error job=${job.id}: ${err}`, err.stack, "BackupService"),
       );
     });
     this.schedulerRegistry.addCronJob(cronName, cron);
     cron.start();
   }
 
-  async triggerManual(jobId: string): Promise<BackupRun> {
-    return this.executeJob(jobId, TriggerType.MANUAL);
+  async triggerManual(jobId: string, actor = "unknown"): Promise<BackupRun> {
+    return this.executeJob(jobId, TriggerType.MANUAL, actor);
   }
 
-  async executeJob(jobId: string, triggeredBy: TriggerType): Promise<BackupRun> {
+  async executeJob(jobId: string, triggeredBy: TriggerType, triggeredActor = "scheduler"): Promise<BackupRun> {
     const job = await this.jobsService.findOne(jobId);
     const run = await this.runRepo.save(
       this.runRepo.create({
         job_id: jobId,
         status: BackupRunStatus.RUNNING,
         verification_status: VerificationStatus.PENDING,
-        verification_reason: 'Backup is still running; restore verification has not started.',
+        verification_reason: "Backup is still running; restore verification has not started.",
         triggered_by: triggeredBy,
         started_at: new Date(),
         storage_path: `${job.storage_prefix || job.target?.database_name}/${new Date().toISOString()}`,
       }),
     );
 
-    this.logger.log(`Starting backup run=${run.id} job=${job.name}`, 'BackupService');
+    if (triggeredBy === TriggerType.MANUAL) {
+      await this.audit.record({
+        action: AuditAction.MANUAL_BACKUP_TRIGGERED,
+        actor: triggeredActor,
+        target_id: job.target_id,
+        job_id: job.id,
+        backup_run_id: run.id,
+        reason: "Manual backup trigger requested.",
+      });
+    }
 
-    const dbPassword = process.env.DB_PASSWORD || '';
+    this.logger.log(`Starting backup run=${run.id} job=${job.name}`, "BackupService");
+
+    const dbPassword = process.env.DB_PASSWORD || "";
     const env = this.walg.buildEnv(job, job.target, dbPassword);
-    let output = '';
+    let output = "";
 
     const result = await this.walg.backupPush(env, (chunk) => { output += chunk; });
 
@@ -83,15 +96,15 @@ export class BackupService implements OnModuleInit {
 
     if (result.exitCode === 0) {
       run.status = BackupRunStatus.SUCCESS;
-      this.markVerificationPending(run, 'No isolated restore verification runner is configured yet.');
+      this.markVerificationPending(run, "No isolated restore verification runner is configured yet.");
       await this.runRepo.save(run);
       await this.jobsService.updateLastRunAt(jobId);
 
       const durationSec = Math.round((run.completed_at.getTime() - run.started_at.getTime()) / 1000);
-      await this.notifications.send('backup.success', `Backup successful: ${job.name}`, {
+      await this.notifications.send("backup.success", `Backup successful: ${job.name}`, {
         job_id: job.id, run_id: run.id, duration_sec: durationSec,
       });
-      await this.notifications.send('backup.verification.pending', `Restore verification pending: ${job.name}`, {
+      await this.notifications.send("backup.verification.pending", `Restore verification pending: ${job.name}`, {
         job_id: job.id,
         run_id: run.id,
         verification_status: run.verification_status,
@@ -101,14 +114,14 @@ export class BackupService implements OnModuleInit {
       await this.retention.cleanup(job, env);
     } else {
       run.status = BackupRunStatus.FAILED;
-      run.error_message = output.slice(-500);
-      this.markVerificationSkipped(run, 'Backup failed before restore verification could run.');
+      run.error_message = this.commandFailureSummary(output);
+      this.markVerificationSkipped(run, "Backup failed before restore verification could run.");
       await this.runRepo.save(run);
 
-      await this.notifications.send('backup.failure', `Backup FAILED: ${job.name}`, {
+      await this.notifications.send("backup.failure", `Backup FAILED: ${job.name}`, {
         job_id: job.id, run_id: run.id, error: run.error_message,
       });
-      this.logger.error(`Backup failed job=${job.id} run=${run.id}`, output, 'BackupService');
+      this.logger.error(`Backup failed job=${job.id} run=${run.id}`, run.error_message, "BackupService");
     }
 
     return run;
@@ -126,18 +139,38 @@ export class BackupService implements OnModuleInit {
     const where: Record<string, unknown> = {};
     if (jobId) where.job_id = jobId;
     if (status) where.status = status;
-    return this.runRepo.find({ where, order: { started_at: 'DESC' }, take: limit, skip: offset, relations: ['job'] });
+    return this.runRepo.find({ where, order: { started_at: "DESC" }, take: limit, skip: offset, relations: ["job"] });
   }
 
   async findOne(id: string): Promise<BackupRun> {
-    const run = await this.runRepo.findOne({ where: { id }, relations: ['job'] });
+    const run = await this.runRepo.findOne({ where: { id }, relations: ["job"] });
     if (!run) throw new Error(`BackupRun ${id} not found`);
     return run;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actor = "unknown", dto: DeleteBackupRunDto = {}): Promise<Record<string, string>> {
     const run = await this.findOne(id);
-    await this.runRepo.remove(run);
+    const approvalActor = dto.approval_actor?.trim();
+    const approvalReason = dto.approval_reason?.trim();
+    if (!approvalActor || !approvalReason) {
+      throw new BadRequestException("Backup-run deletion is disabled unless approval actor and audit reason are supplied.");
+    }
+
+    await this.audit.record({
+      action: AuditAction.BACKUP_RUN_DELETION_BLOCKED,
+      actor,
+      target_id: run.job?.target_id,
+      job_id: run.job_id,
+      backup_run_id: run.id,
+      reason: approvalReason,
+      metadata: { approved_by: approvalActor, physical_delete: false },
+    });
+
+    return {
+      status: "blocked",
+      backup_run_id: run.id,
+      message: "Physical backup-run deletion is disabled; approval request was recorded for audit.",
+    };
   }
 
   private markVerificationPending(run: BackupRun, reason: string) {
@@ -152,5 +185,9 @@ export class BackupService implements OnModuleInit {
     run.verification_checked_at = new Date();
     run.verification_reason = reason;
     run.verification_error = null;
+  }
+
+  private commandFailureSummary(output: string): string {
+    return `Backup command failed. Captured output length: ${output.length} characters.`;
   }
 }

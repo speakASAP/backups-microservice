@@ -13,14 +13,17 @@
     "BAK-G1 intent preservation and roadmap",
     "BAK-G2 operator dashboard frontend",
     "BAK-G3 dashboard summary API",
-    "BAK-G4 restore verification evidence"
+    "BAK-G4 restore verification evidence",
+    "BAK-G5 coverage model",
+    "BAK-G6 safety and audit controls",
+    "BAK-G7 production readiness"
   ],
-  "next_goal": "BAK-G5 coverage model",
+  "next_goal": "owner review and production deployment approval",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 04 restore verification evidence completed and validated on the remote filesystem. Build, full Jest, and admin JS syntax checks passed. Broad .gitignore backup patterns were fixed so active backup source files are visible before commit preparation; next goal is BAK-G5 coverage model."
+  "notes": "Goal 07 production readiness completed and validated in remote worktree /home/ssf/Documents/Github/backups-microservice-goal06. Added database/storage readiness checks, smoke runner, deploy hook, and readiness probe update. Build, Jest, smoke script syntax, deploy shell syntax, diff whitespace, and mock HTTP smoke passed. Production deployment was not run without owner approval."
 }

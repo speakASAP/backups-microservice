@@ -319,6 +319,40 @@ h2 {
   background: #fbfcfe;
 }
 
+.coverage-card.gap {
+  border-style: dashed;
+  background: #fffaf2;
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 14px 14px 0;
+}
+
+.stat-card {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.stat-card strong,
+.stat-card span {
+  display: block;
+}
+
+.stat-card strong {
+  font-size: 22px;
+}
+
+.stat-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .coverage-card h3,
 .target-card h3,
 .service-card h3,
