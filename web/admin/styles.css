@@ -512,34 +512,92 @@ select {
 
 .login-page {
   min-height: 100vh;
-  background:
-    linear-gradient(135deg, rgba(24, 102, 210, 0.08), transparent 34%),
-    linear-gradient(315deg, rgba(19, 138, 93, 0.08), transparent 28%),
-    var(--bg);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%);
 }
 
 .login-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  gap: 32px;
-  width: min(1080px, calc(100vw - 32px));
+  width: min(940px, calc(100vw - 32px));
   min-height: 100vh;
   margin: 0 auto;
+  place-items: center;
+  padding: 40px 0;
+}
+
+.login-window {
+  width: min(860px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(160, 174, 192, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 26px 70px rgba(31, 48, 70, 0.16);
+}
+
+.login-titlebar {
+  display: flex;
   align-items: center;
-  padding: 32px 0;
+  justify-content: space-between;
+  min-height: 68px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #f8fafc;
+}
+
+.login-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c7d7ea;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #174f90;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.login-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 30px;
+  align-items: start;
+  padding: 34px;
+}
+
+.login-copy {
+  padding-top: 4px;
 }
 
 .login-copy h1 {
-  margin-bottom: 16px;
-  font-size: clamp(42px, 6vw, 68px);
+  max-width: 440px;
+  margin-bottom: 12px;
+  font-size: 34px;
+  line-height: 1.08;
 }
 
-.login-panel .notice {
-  margin: 0 20px 20px;
+.login-copy .lead {
+  max-width: 460px;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .login-form {
-  padding-bottom: 14px;
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.login-form .button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+}
+
+.login-window .notice {
+  margin: 0 34px 30px;
 }
 
 .landing-shell {
@@ -620,8 +678,16 @@ select {
   .metric-grid,
   .split-layout,
   .landing-shell,
-  .login-shell {
+  .login-content {
     grid-template-columns: 1fr;
+  }
+
+  .login-content {
+    padding: 24px;
+  }
+
+  .login-window .notice {
+    margin: 0 24px 24px;
   }
 
   .form-grid {

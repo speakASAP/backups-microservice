@@ -4,40 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Backups Admin - Login</title>
-  <link rel="stylesheet" href="/admin/styles.css">
+  <link rel="stylesheet" href="/admin/styles.css?v=admin-auth-20260612b">
 </head>
 <body class="login-page">
   <main class="login-shell">
-    <section class="login-copy">
-      <p class="service-label">Backups admin</p>
-      <h1>Disaster recovery console</h1>
-      <p class="lead">Authentication is required before the backup dashboard, schedules, or restore controls are served.</p>
-    </section>
-
-    <section class="panel login-panel" aria-label="Admin login">
-      <div class="panel-header">
-        <div>
-          <h2>Sign in</h2>
-          <p>Use the admin account from the auth service.</p>
+    <section class="login-window" aria-label="Backups admin sign in">
+      <div class="login-titlebar">
+        <div class="brand">
+          <span class="brand-mark">B</span>
+          <span>
+            <strong>Backups</strong>
+            <small>Admin console</small>
+          </span>
         </div>
+        <span class="login-status">Protected</span>
       </div>
-      <form id="login-form" class="form-grid login-form">
-        <label class="span-2">
-          <span>Email</span>
-          <input id="login-email" name="email" type="email" autocomplete="username" required autofocus>
-        </label>
-        <label class="span-2">
-          <span>Password</span>
-          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
-        </label>
-        <div class="form-actions span-2">
-          <button id="login-submit" class="button primary" type="submit">Sign in</button>
+
+      <div class="login-content">
+        <div class="login-copy">
+          <p class="service-label">Authentication required</p>
+          <h1>Sign in to Backups</h1>
+          <p class="lead">Use the admin account from the auth service to open dashboard, schedules, and restore controls.</p>
         </div>
-      </form>
+
+        <form id="login-form" class="login-form">
+          <label>
+            <span>Email</span>
+            <input id="login-email" name="email" type="email" autocomplete="username" required autofocus>
+          </label>
+          <label>
+            <span>Password</span>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="login-submit" class="button primary" type="submit">Sign in</button>
+        </form>
+      </div>
+
       <div id="notice" class="notice hidden"></div>
     </section>
   </main>
 
-  <script src="/admin/app.js"></script>
+  <script src="/admin/app.js?v=admin-auth-20260612b"></script>
 </body>
 </html>

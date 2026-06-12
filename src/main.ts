@@ -53,8 +53,10 @@ async function bootstrap() {
   const webPath = path.join(process.cwd(), 'web');
   app.use(express.json({ limit: '32kb' }));
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.path === '/admin/login') {
+    if (req.path.startsWith('/admin/')) {
       res.setHeader('Cache-Control', 'no-store');
+    }
+    if (req.path === '/admin/login') {
       return res.sendFile(path.join(webPath, 'admin', 'login.html'));
     }
     if (req.path === '/admin/session' || req.path === '/admin/logout') return next();
