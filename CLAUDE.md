@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-→ Ecosystem: [../shared/CLAUDE.md](../shared/CLAUDE.md) | Reading order: `BUSINESS.md` → `SYSTEM.md` → `AGENTS.md` → `TASKS.md` → `STATE.json`
+→ Ecosystem: [../shared/CLAUDE.md](../shared/CLAUDE.md) | Reading order: `BUSINESS.md` → `SYSTEM.md` → `AGENTS.md` → `TASKS.md` → `STATE.json` → `docs/orchestrator/INTENT.md` → `docs/orchestrator/backup-intent-plan.md`
 
 ---
 
@@ -78,3 +78,4 @@ Non-sensitive vars in `k8s/configmap.yaml`. Secrets (DB_PASSWORD, JWT_SECRET, MI
 - Backups that cannot be restored are failures — always run restore verification after backup
 - Never hardcode credentials — all via Vault → ESO
 - DB schema is always `backups` — never use public schema
+- Preserve the intent plan before implementation: no secret exposure, no unsafe restore flow, no agent deletion of backup runs, and no retention below three full backups without explicit owner approval

@@ -3,140 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Backups Admin — Jobs</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Backups Admin - Schedules</title>
+  <link rel="stylesheet" href="/admin/styles.css">
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-  <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-6">
-    <span class="text-lg font-bold text-white">🗄️ Backups Admin</span>
-    <a href="/admin" class="text-gray-400 hover:text-white">Dashboard</a>
-    <a href="/admin/jobs.html" class="text-blue-400 font-medium">Jobs</a>
-    <a href="/admin/restore.html" class="text-gray-400 hover:text-white">Restore</a>
-    <a href="/" class="ml-auto text-gray-500 hover:text-gray-300 text-sm">← Home</a>
-  </nav>
-
-  <div class="p-6 max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Backup Jobs</h1>
-      <button onclick="showCreateForm()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded transition">+ New Job</button>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin" aria-label="Backups dashboard">
+      <span class="brand-mark">B</span>
+      <span>
+        <strong>Backups</strong>
+        <small>Disaster recovery console</small>
+      </span>
+    </a>
+    <nav class="nav-links" aria-label="Admin navigation">
+      <a href="/admin">Dashboard</a>
+      <a class="active" href="/admin/jobs.html">Schedules</a>
+      <a href="/admin/restore.html">Restore</a>
+    </nav>
+    <div class="token-control">
+      <input id="token-input" type="password" autocomplete="off" placeholder="JWT or service token">
+      <button class="icon-button" type="button" data-action="save-token" title="Save token" aria-label="Save token">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+      </button>
     </div>
+  </header>
 
-    <!-- Create form -->
-    <div id="create-form" class="hidden bg-gray-800 rounded-lg p-6 mb-6">
-      <h2 class="font-semibold mb-4">New Backup Job</h2>
-      <div class="grid grid-cols-2 gap-4">
+  <main class="page-shell" data-page="jobs">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">Schedules</p>
+        <h1>Backup jobs</h1>
+      </div>
+      <div class="heading-actions">
+        <button class="button secondary" type="button" data-action="refresh">Refresh</button>
+        <button class="button primary" type="button" data-action="show-job-form">New schedule</button>
+      </div>
+    </section>
+
+    <div id="notice" class="notice hidden"></div>
+
+    <section id="job-form-panel" class="panel hidden">
+      <div class="panel-header">
         <div>
-          <label class="block text-sm text-gray-400 mb-1">Name</label>
-          <input id="f-name" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" placeholder="daily-mydb">
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Target ID (UUID)</label>
-          <input id="f-target" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" placeholder="uuid">
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Cron Schedule</label>
-          <input id="f-cron" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" placeholder="0 2 * * *" value="0 2 * * *">
-        </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Retention (full backups)</label>
-          <input id="f-retain" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" type="number" value="7">
-        </div>
-        <div class="col-span-2">
-          <label class="block text-sm text-gray-400 mb-1">Storage Prefix (optional)</label>
-          <input id="f-prefix" class="w-full bg-gray-700 rounded px-3 py-2 text-sm" placeholder="s3://backups/mydb">
+          <h2>Create backup schedule</h2>
+          <p>Choose an existing target so operators do not paste raw UUIDs.</p>
         </div>
       </div>
-      <div class="flex gap-3 mt-4">
-        <button onclick="createJob()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded transition">Create</button>
-        <button onclick="document.getElementById('create-form').classList.add('hidden')" class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded transition">Cancel</button>
-      </div>
-    </div>
+      <form id="job-form" class="form-grid">
+        <label>
+          <span>Name</span>
+          <input id="job-name" required placeholder="daily-backups-db">
+        </label>
+        <label>
+          <span>Target source</span>
+          <select id="job-target" required></select>
+        </label>
+        <label>
+          <span>Cron schedule</span>
+          <input id="job-cron" required value="0 2 * * *" placeholder="0 2 * * *">
+        </label>
+        <label>
+          <span>Retention full backups</span>
+          <input id="job-retention" type="number" min="3" value="7">
+        </label>
+        <label class="span-2">
+          <span>Storage prefix</span>
+          <input id="job-prefix" placeholder="s3://backups/service-database">
+        </label>
+        <div class="form-actions span-2">
+          <button class="button primary" type="submit">Create schedule</button>
+          <button class="button secondary" type="button" data-action="hide-job-form">Cancel</button>
+        </div>
+      </form>
+    </section>
 
-    <!-- Jobs table -->
-    <div class="bg-gray-800 rounded-lg overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="text-gray-400 border-b border-gray-700">
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Configured schedules</h2>
+          <p>Run, enable, disable, and review retention policy for each source.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left">Name</th>
-              <th class="px-6 py-3 text-left">Target</th>
-              <th class="px-6 py-3 text-left">Schedule</th>
-              <th class="px-6 py-3 text-left">Retain</th>
-              <th class="px-6 py-3 text-left">Status</th>
-              <th class="px-6 py-3 text-left">Last Run</th>
-              <th class="px-6 py-3 text-left">Actions</th>
+              <th>Name</th>
+              <th>Source</th>
+              <th>Schedule</th>
+              <th>Retention</th>
+              <th>Status</th>
+              <th>Last run</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="jobs-table">
-            <tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
-          </tbody>
+          <tbody id="jobs-table"></tbody>
         </table>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <script>
-    const token = localStorage.getItem('backups_token') || '';
-    const headers = () => ({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Backup sources</h2>
+          <p>PostgreSQL targets currently known to the backup service.</p>
+        </div>
+      </div>
+      <div id="targets-list" class="target-grid"></div>
+    </section>
+  </main>
 
-    async function load() {
-      try {
-        const r = await fetch('/jobs', { headers: headers() });
-        const jobs = await r.json();
-        const tbody = document.getElementById('jobs-table');
-        if (!Array.isArray(jobs) || jobs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No jobs yet</td></tr>';
-          return;
-        }
-        tbody.innerHTML = jobs.map(j => `<tr class="border-t border-gray-700">
-          <td class="px-6 py-3 font-medium">${j.name}</td>
-          <td class="px-6 py-3 text-gray-400">${j.target?.name || j.target_id?.slice(0,8) || '—'}</td>
-          <td class="px-6 py-3 font-mono text-xs text-gray-300">${j.schedule_cron}</td>
-          <td class="px-6 py-3 text-gray-400">${j.retention_full_count}</td>
-          <td class="px-6 py-3"><span class="px-2 py-0.5 rounded text-xs font-medium ${j.enabled ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400'}">${j.enabled ? 'enabled' : 'disabled'}</span></td>
-          <td class="px-6 py-3 text-gray-400">${j.last_run_at ? new Date(j.last_run_at).toLocaleString() : '—'}</td>
-          <td class="px-6 py-3">
-            <button onclick="triggerJob('${j.id}')" class="text-blue-400 hover:text-blue-300 text-xs mr-3">Run now</button>
-            <button onclick="toggleJob('${j.id}', ${j.enabled})" class="text-yellow-400 hover:text-yellow-300 text-xs mr-3">${j.enabled ? 'Disable' : 'Enable'}</button>
-            <button onclick="deleteJob('${j.id}')" class="text-red-400 hover:text-red-300 text-xs">Delete</button>
-          </td>
-        </tr>`).join('');
-      } catch (e) { console.error(e); }
-    }
-
-    function showCreateForm() { document.getElementById('create-form').classList.remove('hidden'); }
-
-    async function createJob() {
-      const body = {
-        name: document.getElementById('f-name').value,
-        target_id: document.getElementById('f-target').value,
-        schedule_cron: document.getElementById('f-cron').value,
-        retention_full_count: parseInt(document.getElementById('f-retain').value) || 7,
-        storage_prefix: document.getElementById('f-prefix').value || undefined,
-      };
-      const r = await fetch('/jobs', { method: 'POST', headers: headers(), body: JSON.stringify(body) });
-      if (r.ok) { document.getElementById('create-form').classList.add('hidden'); load(); }
-      else alert('Error: ' + await r.text());
-    }
-
-    async function triggerJob(id) {
-      const r = await fetch('/backups/trigger', { method: 'POST', headers: headers(), body: JSON.stringify({ job_id: id }) });
-      alert(r.ok ? 'Triggered!' : 'Error: ' + await r.text());
-      load();
-    }
-
-    async function toggleJob(id, enabled) {
-      await fetch(`/jobs/${id}`, { method: 'PATCH', headers: headers(), body: JSON.stringify({ enabled: !enabled }) });
-      load();
-    }
-
-    async function deleteJob(id) {
-      if (!confirm('Disable this job?')) return;
-      await fetch(`/jobs/${id}`, { method: 'DELETE', headers: headers() });
-      load();
-    }
-
-    load();
-  </script>
+  <script src="/admin/app.js"></script>
 </body>
 </html>

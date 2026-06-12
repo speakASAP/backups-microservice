@@ -14,7 +14,8 @@ async function bootstrap() {
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path === '/admin' || req.path === '/admin/') return res.sendFile(path.join(webPath, 'admin', 'index.html'));
     if (req.path.startsWith('/backups') || req.path.startsWith('/jobs') || req.path.startsWith('/targets')
-      || req.path.startsWith('/restore') || req.path.startsWith('/health') || req.path.startsWith('/info')) return next();
+      || req.path.startsWith('/restore') || req.path.startsWith('/dashboard')
+      || req.path.startsWith('/health') || req.path.startsWith('/info')) return next();
     express.static(webPath)(req, res, next);
   });
 

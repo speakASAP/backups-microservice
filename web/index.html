@@ -4,32 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Backups Microservice</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/admin/styles.css">
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex items-center justify-center">
-  <div class="text-center max-w-lg">
-    <div class="text-5xl mb-6">🗄️</div>
-    <h1 class="text-3xl font-bold mb-2">Backups Microservice</h1>
-    <p class="text-gray-400 mb-8">Centralized database backup management for the Statex ecosystem.</p>
-    <div class="flex gap-4 justify-center">
-      <a href="/admin" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-3 rounded-lg transition">Admin Panel</a>
-      <a href="/health" class="bg-gray-700 hover:bg-gray-600 text-white font-medium px-6 py-3 rounded-lg transition">Health Check</a>
-      <a href="/info" class="bg-gray-700 hover:bg-gray-600 text-white font-medium px-6 py-3 rounded-lg transition">API Info</a>
-    </div>
-    <div class="mt-12 grid grid-cols-3 gap-4 text-sm">
-      <div class="bg-gray-800 rounded-lg p-4">
-        <div class="text-blue-400 font-semibold mb-1">Targets</div>
-        <div class="text-gray-400">Database connections</div>
+<body class="landing">
+  <main class="landing-shell">
+    <section class="landing-copy">
+      <p class="service-label">Statex infrastructure</p>
+      <h1>Backups Microservice</h1>
+      <p class="lead">Central control for PostgreSQL backups, schedules, retention, restore requests, and future ecosystem recovery sources.</p>
+      <div class="landing-actions">
+        <a class="button primary" href="/admin">Open console</a>
+        <a class="button secondary" href="/health">Health</a>
+        <a class="button secondary" href="/info">API info</a>
       </div>
-      <div class="bg-gray-800 rounded-lg p-4">
-        <div class="text-green-400 font-semibold mb-1">Jobs</div>
-        <div class="text-gray-400">Scheduled backups</div>
+    </section>
+    <section class="landing-panel" aria-label="Backup coverage summary">
+      <div class="panel-row">
+        <span>Current backup engine</span>
+        <strong>WAL-G logical PostgreSQL backups</strong>
       </div>
-      <div class="bg-gray-800 rounded-lg p-4">
-        <div class="text-purple-400 font-semibold mb-1">Restore</div>
-        <div class="text-gray-400">Point-in-time recovery</div>
+      <div class="panel-row">
+        <span>Storage backend</span>
+        <strong>MinIO S3-compatible bucket</strong>
       </div>
-    </div>
-  </div>
+      <div class="panel-row">
+        <span>Secrets boundary</span>
+        <strong>Vault and Kubernetes secrets</strong>
+      </div>
+      <div class="panel-row">
+        <span>Restore policy</span>
+        <strong>Human approval required for production</strong>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

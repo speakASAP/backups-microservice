@@ -16,6 +16,7 @@ export class InfoController {
         jobs: 'GET /jobs',
         targets: 'GET /targets',
         restore: 'GET /restore',
+        dashboard: 'GET /dashboard/summary',
       },
       timestamp: new Date().toISOString(),
     };

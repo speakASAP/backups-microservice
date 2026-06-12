@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh — Kubernetes deployment for backups-microservice
+# deploy.sh - Kubernetes deployment for backups-microservice
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +19,14 @@ HEALTH_PATH="/health"
 HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-30}"
 HEALTH_INTERVAL_SEC="${HEALTH_INTERVAL_SEC:-2}"
 
-DEFAULT_TAG="$(cd "$PROJECT_ROOT" && git rev-parse --short HEAD 2>/dev/null || echo "build-$(date -u +%Y%m%d%H%M%S)")"
+DEFAULT_COMMIT="$(cd "$PROJECT_ROOT" && git rev-parse --short HEAD 2>/dev/null || true)"
+if [ -n "$DEFAULT_COMMIT" ] && (cd "$PROJECT_ROOT" && git diff --quiet && git diff --cached --quiet); then
+  DEFAULT_TAG="$DEFAULT_COMMIT"
+elif [ -n "$DEFAULT_COMMIT" ]; then
+  DEFAULT_TAG="${DEFAULT_COMMIT}-dirty-$(date -u +%Y%m%d%H%M%S)"
+else
+  DEFAULT_TAG="build-$(date -u +%Y%m%d%H%M%S)"
+fi
 IMAGE_TAG="${1:-$DEFAULT_TAG}"
 IMAGE="${REGISTRY}/${SERVICE_NAME}:${IMAGE_TAG}"
 IMAGE_LATEST="${REGISTRY}/${SERVICE_NAME}:latest"
@@ -64,7 +71,7 @@ kubectl apply -f "$PROJECT_ROOT/k8s/ingress.yaml" -n "$NAMESPACE"
 deploy_timing_phase_end "Apply K8s manifests"
 
 deploy_timing_phase_start "Update deployment image"
-kubectl set image "deployment/${SERVICE_NAME}" app="$IMAGE_LATEST" -n "$NAMESPACE"
+kubectl set image "deployment/${SERVICE_NAME}" app="$IMAGE" -n "$NAMESPACE"
 deploy_timing_phase_end "Update deployment image"
 
 deploy_timing_phase_start "Wait for rollout"

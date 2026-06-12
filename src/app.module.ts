@@ -15,6 +15,7 @@ import { RetentionModule } from './retention/retention.module';
 import { RestoreModule } from './restore/restore.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { JwtRolesGuard } from './auth/jwt-roles.guard';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { JwtRolesGuard } from './auth/jwt-roles.guard';
     RetentionModule,
     RestoreModule,
     NotificationsModule,
+    DashboardModule,
   ],
   controllers: [HealthController, InfoController],
   providers: [{ provide: APP_GUARD, useClass: JwtRolesGuard }],
