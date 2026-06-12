@@ -1,6 +1,25 @@
 {
-  "stage": "intent-preservation-and-frontend",
+  "stage": "orchestrated-implementation",
   "health": "healthy-public-health-check",
   "last_updated": "2026-06-12",
-  "notes": "Intent preservation docs added locally. Dashboard summary API and frontend management UI prepared for build/deploy. Next domain goal: restore verification evidence."
+  "intent_preservation_system": {
+    "process": "docs/process/INTENT_PRESERVATION_SYSTEM.md",
+    "invariants": "docs/process/PROJECT_INVARIANTS.md",
+    "gate_standard": "docs/process/OPERATIONAL_GATES.md",
+    "required_chain": "Original Intent -> Goal Impact -> Execution Plan -> Context Package -> Coding Prompt -> Code -> Validation Report -> State Update"
+  },
+  "active_goal": null,
+  "completed_goals": [
+    "BAK-G1 intent preservation and roadmap",
+    "BAK-G2 operator dashboard frontend",
+    "BAK-G3 dashboard summary API"
+  ],
+  "next_goal": "BAK-G4 restore verification evidence",
+  "orchestrator": {
+    "entrypoint": "AGENTS.md",
+    "state": "docs/IMPLEMENTATION_STATE.md",
+    "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
+    "goal_index": "implementation-goals/README.md"
+  },
+  "notes": "Goalkeeper-style orchestrator workflow and IPS compliance docs added locally. Future sessions should use docs/IMPLEMENTATION_STATE.md as the source of truth, complete the Goal 04 pre-coding gate artifacts, and continue with BAK-G4 restore verification evidence."
 }
