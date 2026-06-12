@@ -110,22 +110,11 @@ select {
   box-shadow: 0 1px 2px rgba(31, 48, 70, 0.08);
 }
 
-.token-control {
+.session-control {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-left: auto;
-}
-
-.token-control input {
-  width: min(280px, 32vw);
-  height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #ffffff;
-  color: var(--text);
-  font-size: 13px;
 }
 
 .icon-button {
@@ -521,6 +510,38 @@ select {
     var(--bg);
 }
 
+.login-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(24, 102, 210, 0.08), transparent 34%),
+    linear-gradient(315deg, rgba(19, 138, 93, 0.08), transparent 28%),
+    var(--bg);
+}
+
+.login-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 32px;
+  width: min(1080px, calc(100vw - 32px));
+  min-height: 100vh;
+  margin: 0 auto;
+  align-items: center;
+  padding: 32px 0;
+}
+
+.login-copy h1 {
+  margin-bottom: 16px;
+  font-size: clamp(42px, 6vw, 68px);
+}
+
+.login-panel .notice {
+  margin: 0 20px 20px;
+}
+
+.login-form {
+  padding-bottom: 14px;
+}
+
 .landing-shell {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.7fr);
@@ -587,8 +608,7 @@ select {
   }
 
   .brand,
-  .token-control,
-  .token-control input {
+  .session-control {
     width: 100%;
     min-width: 0;
   }
@@ -599,7 +619,8 @@ select {
 
   .metric-grid,
   .split-layout,
-  .landing-shell {
+  .landing-shell,
+  .login-shell {
     grid-template-columns: 1fr;
   }
 

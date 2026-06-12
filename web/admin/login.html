@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backups Admin - Login</title>
+  <link rel="stylesheet" href="/admin/styles.css">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-copy">
+      <p class="service-label">Backups admin</p>
+      <h1>Disaster recovery console</h1>
+      <p class="lead">Authentication is required before the backup dashboard, schedules, or restore controls are served.</p>
+    </section>
+
+    <section class="panel login-panel" aria-label="Admin login">
+      <div class="panel-header">
+        <div>
+          <h2>Sign in</h2>
+          <p>Use the admin account from the auth service.</p>
+        </div>
+      </div>
+      <form id="login-form" class="form-grid login-form">
+        <label class="span-2">
+          <span>Email</span>
+          <input id="login-email" name="email" type="email" autocomplete="username" required autofocus>
+        </label>
+        <label class="span-2">
+          <span>Password</span>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <div class="form-actions span-2">
+          <button id="login-submit" class="button primary" type="submit">Sign in</button>
+        </div>
+      </form>
+      <div id="notice" class="notice hidden"></div>
+    </section>
+  </main>
+
+  <script src="/admin/app.js"></script>
+</body>
+</html>

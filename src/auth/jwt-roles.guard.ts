@@ -7,6 +7,15 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ROLES_KEY, PUBLIC_KEY } from './roles.decorator';
 
+const ADMIN_COOKIE = 'backups_admin_token';
+
+function readCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined;
+  const cookie = cookieHeader.split(';').find((part) => part.trim().startsWith(`${name}=`));
+  if (!cookie) return undefined;
+  return decodeURIComponent(cookie.slice(cookie.indexOf('=') + 1).trim());
+}
+
 @Injectable()
 export class JwtRolesGuard implements CanActivate {
   constructor(private reflector: Reflector, private jwtService: JwtService) {}
@@ -26,9 +35,12 @@ export class JwtRolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) throw new UnauthorizedException('Missing Authorization header');
+    const cookieToken = readCookie(request.headers.cookie, ADMIN_COOKIE);
+    if (!authHeader?.startsWith('Bearer ') && !cookieToken) {
+      throw new UnauthorizedException('Missing Authorization header');
+    }
 
-    const token = authHeader.slice(7);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : cookieToken;
     const serviceToken = process.env.SERVICE_TOKEN;
     if (serviceToken && token === serviceToken) {
       (request as any).user = { sub: 'service:backups-microservice', roles: ['global:superadmin'] };
