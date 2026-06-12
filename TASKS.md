@@ -14,10 +14,10 @@
 - [ ] Add NotificationsModule integration (success/failure)
 - [ ] Add LoggingModule integration
 - [x] Implement restore verification state and evidence
-- [ ] Add coverage model for service owner, RPO/RTO, source type, and criticality
+- [x] Add coverage model for service owner, RPO/RTO, source type, and criticality
 - [ ] Harden retention, backup-run deletion, and production restore approval controls
 - [ ] Production readiness review
 
 ## Orchestrated Next Action
 
-- [ ] `BAK-G5` Coverage model for service owner, RPO/RTO, source type, and criticality
+- [ ] `BAK-G6` Safety and audit controls for retention, deletion, and production restore approval

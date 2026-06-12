@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BackupRun, BackupRunStatus, VerificationStatus } from '../backup/entities/backup-run.entity';
 import { BackupJob } from '../jobs/entities/backup-job.entity';
-import { RestoreRequest, RestoreStatus } from '../restore/entities/restore-request.entity';
+import { RestoreRequest } from '../restore/entities/restore-request.entity';
 import { BackupTarget } from '../targets/entities/backup-target.entity';
 import { BackupDestination } from '../destinations/entities/backup-destination.entity';
+import { DiscoveryService } from '../discovery/discovery.service';
 
 @Injectable()
 export class DashboardService {
@@ -15,15 +16,24 @@ export class DashboardService {
     @InjectRepository(BackupRun) private readonly runRepo: Repository<BackupRun>,
     @InjectRepository(RestoreRequest) private readonly restoreRepo: Repository<RestoreRequest>,
     @InjectRepository(BackupDestination) private readonly destinationRepo: Repository<BackupDestination>,
+    private readonly discoveryService: DiscoveryService,
   ) {}
 
   async summary() {
-    const [targets, jobs, recentRuns, restores, destinations] = await Promise.all([
+    const [targets, jobs, recentRuns, restores, destinations, discovery] = await Promise.all([
       this.targetRepo.find({ order: { created_at: 'DESC' } }),
       this.jobRepo.find({ relations: ['target'], order: { created_at: 'DESC' } }),
       this.runRepo.find({ relations: ['job'], order: { started_at: 'DESC' }, take: 80 }),
       this.restoreRepo.find({ relations: ['backup_run', 'target'], order: { created_at: 'DESC' }, take: 40 }),
       this.destinationRepo.find({ order: { enabled: 'DESC', priority: 'ASC', created_at: 'DESC' } }),
+      this.discoveryService.kubernetes().catch((error) => ({
+        available: false,
+        generated_at: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unable to inspect Kubernetes services',
+        databases: [],
+        services: [],
+        workloads: [],
+      })),
     ]);
 
     const now = Date.now();
@@ -47,6 +57,12 @@ export class DashboardService {
       jobsByTarget.set(job.target_id, list);
     }
 
+    const unprotectedDiscoveredSources = this.unprotectedDiscoveredSources(discovery, targets);
+    const protectedTargets = targets.filter((target) => {
+      const targetJobs = jobsByTarget.get(target.id) || [];
+      return target.enabled && targetJobs.some((job) => job.enabled);
+    });
+
     return {
       generated_at: new Date().toISOString(),
       storage: this.storageSettings(),
@@ -59,6 +75,8 @@ export class DashboardService {
       stats: {
         targets_total: targets.length,
         targets_enabled: targets.filter((target) => target.enabled).length,
+        protected_sources: protectedTargets.length,
+        unprotected_discovered_sources: unprotectedDiscoveredSources.length,
         jobs_total: jobs.length,
         jobs_enabled: jobs.filter((job) => job.enabled).length,
         runs_tracked: recentRuns.length,
@@ -74,6 +92,8 @@ export class DashboardService {
         verification_failed: verificationFailed.length,
       },
       destinations,
+      coverage_stats: this.coverageStats(targets, protectedTargets, unprotectedDiscoveredSources),
+      unprotected_discovered_sources: unprotectedDiscoveredSources,
       coverage: targets.map((target) => {
         const targetJobs = jobsByTarget.get(target.id) || [];
         const targetRuns = recentRuns.filter((run) => targetJobs.some((job) => job.id === run.job_id));
@@ -102,6 +122,50 @@ export class DashboardService {
       recent_runs: recentRuns.slice(0, 20).map((run) => this.serializeRun(run)),
       restore_requests: restores.slice(0, 20),
     };
+  }
+
+  private coverageStats(
+    targets: BackupTarget[],
+    protectedTargets: BackupTarget[],
+    unprotectedDiscoveredSources: Array<Record<string, unknown>>,
+  ) {
+    const byCategory = new Map<string, { total: number; protected: number }>();
+    for (const target of targets) {
+      const category = String(target.source_category || 'postgres_database');
+      const existing = byCategory.get(category) || { total: 0, protected: 0 };
+      existing.total += 1;
+      if (protectedTargets.some((protectedTarget) => protectedTarget.id === target.id)) existing.protected += 1;
+      byCategory.set(category, existing);
+    }
+    for (const source of unprotectedDiscoveredSources) {
+      const category = String(source.source_category || 'service');
+      const existing = byCategory.get(category) || { total: 0, protected: 0 };
+      existing.total += 1;
+      byCategory.set(category, existing);
+    }
+    return Array.from(byCategory.entries()).map(([source_category, counts]) => ({ source_category, ...counts }));
+  }
+
+  private unprotectedDiscoveredSources(discovery: any, targets: BackupTarget[]) {
+    const services = Array.isArray(discovery?.services) ? discovery.services : [];
+    return services
+      .filter((service) => !targets.some((target) => this.matchesTarget(service, target)))
+      .map((service) => ({
+        name: service.name,
+        namespace: service.namespace,
+        host: service.host,
+        source_category: service.backup_kind === 'postgres' ? 'postgres_database' : 'service',
+        backup_ready: Boolean(service.backup_ready),
+        reason: service.backup_ready
+          ? 'Discovered PostgreSQL service has no backup target.'
+          : 'Discovered service has no implemented backup source contract yet.',
+      }));
+  }
+
+  private matchesTarget(service: any, target: BackupTarget) {
+    return target.host === service.host
+      || target.host === service.name
+      || (target.name === service.name && target.kubernetes_namespace === service.namespace);
   }
 
   private serializeRun(run: BackupRun) {
