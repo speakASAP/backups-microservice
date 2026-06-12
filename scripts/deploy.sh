@@ -64,6 +64,7 @@ deploy_timing_phase_end "Push image"
 
 deploy_timing_phase_start "Apply K8s manifests"
 kubectl apply -f "$PROJECT_ROOT/k8s/external-secret.yaml" -n "$NAMESPACE"
+kubectl apply -f "$PROJECT_ROOT/k8s/rbac.yaml"
 kubectl apply -f "$PROJECT_ROOT/k8s/configmap.yaml" -n "$NAMESPACE"
 kubectl apply -f "$PROJECT_ROOT/k8s/deployment.yaml" -n "$NAMESPACE"
 kubectl apply -f "$PROJECT_ROOT/k8s/service.yaml" -n "$NAMESPACE"

@@ -276,6 +276,13 @@ h2 {
   margin-bottom: 16px;
 }
 
+.discovery-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr);
+  gap: 16px;
+  padding: 16px;
+}
+
 .panel {
   margin-bottom: 16px;
   overflow: hidden;
@@ -291,14 +298,18 @@ h2 {
 }
 
 .coverage-list,
-.target-grid {
+.target-grid,
+.service-list,
+.destination-list {
   display: grid;
   gap: 10px;
   padding: 14px;
 }
 
 .coverage-card,
-.target-card {
+.target-card,
+.service-card,
+.destination-card {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
@@ -309,9 +320,48 @@ h2 {
 }
 
 .coverage-card h3,
-.target-card h3 {
+.target-card h3,
+.service-card h3,
+.destination-card h3,
+.stack-form h3 {
   margin: 0 0 6px;
   font-size: 15px;
+}
+
+.service-list,
+.destination-list {
+  padding: 0;
+}
+
+.service-list.compact {
+  max-height: 300px;
+  overflow: auto;
+}
+
+.service-card.compact {
+  align-items: center;
+  padding: 11px 12px;
+}
+
+.destination-card {
+  grid-template-columns: 1fr;
+  margin: 0 14px 10px;
+}
+
+.destination-card p,
+.stack-form p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.section-label {
+  margin: 2px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
 .meta-line {
@@ -458,6 +508,25 @@ tbody tr:hover {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   padding: 18px 20px 20px;
+}
+
+.form-grid.tight {
+  gap: 10px;
+  padding: 0;
+}
+
+.stack-form {
+  display: grid;
+  align-self: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.compact-form {
+  margin: 14px;
 }
 
 label {
@@ -677,6 +746,7 @@ select {
 
   .metric-grid,
   .split-layout,
+  .discovery-layout,
   .landing-shell,
   .login-content {
     grid-template-columns: 1fr;
@@ -712,7 +782,9 @@ select {
 
   .settings-list div,
   .coverage-card,
-  .target-card {
+  .target-card,
+  .service-card,
+  .destination-card {
     grid-template-columns: 1fr;
   }
 }
