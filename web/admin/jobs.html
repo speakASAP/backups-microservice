@@ -63,7 +63,15 @@
         </label>
         <label>
           <span>Retention full backups</span>
-          <input id="job-retention" type="number" min="3" value="7">
+          <input id="job-retention" type="number" min="1" value="7">
+        </label>
+        <label>
+          <span>Retention approval actor</span>
+          <input id="job-retention-approval-actor" placeholder="owner email for retention below 3">
+        </label>
+        <label>
+          <span>Retention approval reason</span>
+          <input id="job-retention-approval-reason" placeholder="why fewer than 3 full backups is acceptable">
         </label>
         <label class="span-2">
           <span>Storage prefix</span>

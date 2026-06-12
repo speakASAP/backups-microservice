@@ -26,6 +26,7 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY web ./web
+COPY scripts ./scripts
 
 EXPOSE ${PORT:-3398}
 

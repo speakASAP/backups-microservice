@@ -42,7 +42,7 @@
 
     <section class="danger-panel">
       <strong>Production restore is destructive.</strong>
-      <span>Only submit a restore after human approval names the source backup run and restore target. This UI keeps the warning visible, but the next backend goal must add approval evidence fields.</span>
+      <span>Only submit a restore after human approval names the source backup run and restore target. This request must include approval actor, target environment, backup run, restore target, and reason evidence.</span>
     </section>
 
     <section id="restore-form-panel" class="panel hidden">
@@ -61,9 +61,26 @@
           <span>Restore target</span>
           <select id="restore-target" required></select>
         </label>
+        <label>
+          <span>Target environment</span>
+          <select id="restore-environment" required>
+            <option value="production">Production</option>
+            <option value="staging">Staging</option>
+            <option value="verification">Verification</option>
+            <option value="test">Test</option>
+          </select>
+        </label>
+        <label>
+          <span>Approval actor</span>
+          <input id="restore-approval-actor" required placeholder="approver email or name">
+        </label>
+        <label class="span-2">
+          <span>Approval reason</span>
+          <input id="restore-approval-reason" required placeholder="approved restore reason and incident reference">
+        </label>
         <label class="span-2 confirm-line">
           <input id="restore-confirm" type="checkbox">
-          <span>I have explicit human approval for this restore target.</span>
+          <span>I have explicit human approval for this restore target and backup run.</span>
         </label>
         <div class="form-actions span-2">
           <button class="button danger" type="submit">Submit restore</button>
@@ -111,6 +128,8 @@
               <th>Request</th>
               <th>Target</th>
               <th>Status</th>
+              <th>Environment</th>
+              <th>Approval</th>
               <th>Requested by</th>
               <th>Created</th>
             </tr>

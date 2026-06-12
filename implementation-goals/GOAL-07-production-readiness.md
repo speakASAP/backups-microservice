@@ -2,7 +2,7 @@
 
 ```yaml
 id: BAK-G7
-status: ready
+status: done
 owner: orchestrator
 created: 2026-06-12
 last_updated: 2026-06-12
@@ -41,3 +41,7 @@ docs/IMPLEMENTATION_STATE.md
 - Run local build/tests.
 - Run non-destructive HTTP smoke checks against approved target.
 - Record deployment evidence only after owner approval.
+
+## Evidence
+
+- 2026-06-12: Added database/storage readiness checks, post-rollout smoke runner, deploy hook, Kubernetes readiness probe update, and focused health controller tests. Validation: build passed, Jest passed with 3 suites and 8 tests, smoke script syntax passed, deploy shell syntax passed, diff whitespace passed, and mock HTTP smoke check passed. Production deploy was not run without owner approval.

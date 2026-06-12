@@ -101,6 +101,54 @@
           <label>Secret reference
             <input id="target-secret" placeholder="vault:secret/data/postgres/app">
           </label>
+          <div class="form-grid tight">
+            <label>Service owner
+              <input id="target-owner" placeholder="orders-service">
+            </label>
+            <label>Namespace
+              <input id="target-namespace" placeholder="statex-apps">
+            </label>
+          </div>
+          <div class="form-grid tight">
+            <label>Source category
+              <select id="target-source-category">
+                <option value="postgres_database">PostgreSQL database</option>
+                <option value="minio_bucket">MinIO bucket contract</option>
+                <option value="kubernetes_resource">Kubernetes resource contract</option>
+                <option value="secret_reference">Secret reference contract</option>
+                <option value="pvc">Persistent volume contract</option>
+              </select>
+            </label>
+            <label>Criticality
+              <select id="target-criticality">
+                <option value="standard">Standard</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-grid tight">
+            <label>RPO minutes
+              <input id="target-rpo" type="number" min="1" placeholder="360">
+            </label>
+            <label>RTO minutes
+              <input id="target-rto" type="number" min="1" placeholder="720">
+            </label>
+          </div>
+          <label>Restore class
+            <select id="target-restore-class">
+              <option value="logical_postgres">Logical PostgreSQL restore</option>
+              <option value="object_restore">Object restore contract</option>
+              <option value="manifest_reapply">Manifest reapply contract</option>
+              <option value="secret_rehydration">Secret rehydration contract</option>
+              <option value="volume_restore">Volume restore contract</option>
+              <option value="manual">Manual runbook</option>
+            </select>
+          </label>
+          <label>Coverage notes
+            <input id="target-notes" placeholder="Owner-approved RPO/RTO or recovery notes">
+          </label>
           <label>Backup destination
             <select id="target-destination"></select>
           </label>
@@ -113,7 +161,15 @@
               </select>
             </label>
             <label>Retention
-              <input id="target-retention" type="number" min="3" value="7">
+              <input id="target-retention" type="number" min="1" value="7">
+            </label>
+          </div>
+          <div class="form-grid tight">
+            <label>Retention approval actor
+              <input id="target-retention-approval-actor" placeholder="owner email for retention below 3">
+            </label>
+            <label>Retention approval reason
+              <input id="target-retention-approval-reason" placeholder="why fewer than 3 full backups is acceptable">
             </label>
           </div>
           <div class="form-actions">
@@ -131,6 +187,7 @@
             <p>Configured sources, schedules, retention, and latest backup evidence.</p>
           </div>
         </div>
+        <div id="coverage-stats" class="stat-strip"></div>
         <div id="coverage-list" class="coverage-list"></div>
       </article>
 

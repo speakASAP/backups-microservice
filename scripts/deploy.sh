@@ -79,31 +79,27 @@ deploy_timing_phase_start "Wait for rollout"
 deploy_timing_k8s_rollout_wait kubectl "$SERVICE_NAME" "$NAMESPACE"
 deploy_timing_phase_end "Wait for rollout"
 
-deploy_timing_phase_start "Health check"
+deploy_timing_phase_start "Smoke check"
 attempt=1
 while [ "${attempt}" -le "${HEALTH_MAX_ATTEMPTS}" ]; do
-  POD=$(kubectl get pod -n "${NAMESPACE}" \
-    -l "app=${SERVICE_NAME}" \
-    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+  POD=$(kubectl get pod -n "${NAMESPACE}" -l "app=${SERVICE_NAME}" -o jsonpath={.items[0].metadata.name} 2>/dev/null || true)
   if [ -z "${POD}" ]; then
-    echo -e "${RED}❌ No pod found for ${SERVICE_NAME}${NC}"
+    echo -e "${RED}No pod found for ${SERVICE_NAME}${NC}"
     exit 1
   fi
-  if kubectl exec -n "${NAMESPACE}" "${POD}" -- node -e \
-    "fetch('http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH}').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" \
-    2>/dev/null; then
-    echo -e "${GREEN}✅ Health check OK${NC}"
+  if kubectl exec -n "${NAMESPACE}" "${POD}" -- sh -c "BACKUPS_BASE_URL=http://127.0.0.1:${HEALTH_PORT} BACKUPS_AUTH_TOKEN=\"\${SERVICE_TOKEN:-}\" BACKUPS_REQUIRE_AUTH_SMOKE=true node scripts/smoke-check.js"; then
+    echo -e "${GREEN}Smoke check OK${NC}"
     break
   fi
   if [ "${attempt}" -eq "${HEALTH_MAX_ATTEMPTS}" ]; then
-    echo -e "${RED}❌ Health check failed after ${HEALTH_MAX_ATTEMPTS} attempts${NC}"
+    echo -e "${RED}Smoke check failed after ${HEALTH_MAX_ATTEMPTS} attempts${NC}"
     exit 1
   fi
   echo -e "${YELLOW}   attempt ${attempt}/${HEALTH_MAX_ATTEMPTS}, retry in ${HEALTH_INTERVAL_SEC}s...${NC}"
   sleep "${HEALTH_INTERVAL_SEC}"
   attempt=$((attempt + 1))
 done
-deploy_timing_phase_end "Health check"
+deploy_timing_phase_end "Smoke check"
 
 deploy_timing_finish_success "$SERVICE_NAME"
 echo "Image:     ${IMAGE}"
