@@ -25,5 +25,5 @@
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 07 production readiness completed and validated in remote worktree /home/ssf/Documents/Github/backups-microservice-goal06. Added database/storage readiness checks, smoke runner, deploy hook, and readiness probe update. Build, Jest, smoke script syntax, deploy shell syntax, diff whitespace, and mock HTTP smoke passed. Production deployment was not run without owner approval."
+  "notes": "Goal 07 production readiness completed and validated in remote worktree /home/ssf/Documents/Github/backups-microservice-goal06. Added database/storage readiness checks, smoke runner, deploy hook, and readiness probe update. Build, Jest, smoke script syntax, deploy shell syntax, diff whitespace, and mock HTTP smoke passed. Production deployment completed with image localhost:5000/backups-microservice:7e56194c; health, readiness, info, protected endpoint rejection, and in-pod smoke checks passed."
 }

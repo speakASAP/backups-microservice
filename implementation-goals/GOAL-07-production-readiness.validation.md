@@ -24,7 +24,8 @@ Validated additive health/readiness API behavior, post-rollout smoke-test covera
 - `scripts/smoke-check.js` covers health, readiness, info, unauthenticated protected endpoint rejection, dashboard summary, jobs, targets, and recent runs.
 - `scripts/deploy.sh` runs the smoke script in the rolled-out pod after rollout with an in-pod token reference only.
 - `k8s/deployment.yaml` readiness probe now targets `/health/readiness`.
-- Production deployment and production smoke evidence were not run because owner approval was not requested in this session.
+- Production deployment was approved by the owner and completed with image `localhost:5000/backups-microservice:7e56194c`.
+- Production smoke passed in the deploy script and external checks confirmed `/health`, `/health/readiness`, `/info`, and unauthenticated `/jobs` behavior.
 
 ## Gate Evidence
 
@@ -54,7 +55,7 @@ Validated additive health/readiness API behavior, post-rollout smoke-test covera
 
 ## Failed Criteria
 
-None for local/source validation. Production deployment evidence remains owner-gated and was not run.
+None. Production deployment evidence was collected after owner approval.
 
 ## Deviations
 
@@ -62,4 +63,4 @@ Goal 07 was implemented in the remote Goal 06 worktree and branch because Goal 0
 
 ## Recommendation
 
-Proceed to owner review. Deploy only after explicit owner approval, then record production smoke evidence from `scripts/deploy.sh`.
+Production deployment completed. Continue monitoring backup schedules and restore-verification evidence.
