@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Backups Admin - Dashboard</title>
-  <link rel="stylesheet" href="/admin/styles.css?v=admin-auth-20260612b">
+  <link rel="stylesheet" href="/admin/styles.css?v=backup-targets-20260612">
 </head>
 <body>
   <header class="topbar">
@@ -64,6 +64,65 @@
       </article>
     </section>
 
+    <section class="panel discovery-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Choose services and databases to back up</h2>
+          <p>Live Kubernetes inventory from this server. PostgreSQL services can be added as protected backup targets.</p>
+        </div>
+        <span id="discovery-status" class="badge neutral">checking</span>
+      </div>
+      <div class="discovery-layout">
+        <div>
+          <div class="section-label">Detected databases</div>
+          <div id="database-list" class="service-list"></div>
+          <div class="section-label">Running apps and services</div>
+          <div id="service-list" class="service-list compact"></div>
+        </div>
+        <form id="target-form" class="stack-form">
+          <div>
+            <h3>Protect database</h3>
+            <p class="muted">Creates a backup target and an enabled WAL-G schedule. Credentials stay in Vault or External Secrets.</p>
+          </div>
+          <label>Target name
+            <input id="target-name" required placeholder="Production Postgres">
+          </label>
+          <label>Service host
+            <input id="target-host" required placeholder="postgres.statex-apps.svc.cluster.local">
+          </label>
+          <div class="form-grid tight">
+            <label>Port
+              <input id="target-port" required type="number" min="1" max="65535" value="5432">
+            </label>
+            <label>Database
+              <input id="target-database" required placeholder="app_db">
+            </label>
+          </div>
+          <label>Secret reference
+            <input id="target-secret" placeholder="vault:secret/data/postgres/app">
+          </label>
+          <label>Backup destination
+            <select id="target-destination"></select>
+          </label>
+          <div class="form-grid tight">
+            <label>Schedule
+              <select id="target-cron">
+                <option value="0 2 * * *">Daily at 02:00</option>
+                <option value="0 */6 * * *">Every 6 hours</option>
+                <option value="0 0 * * 0">Weekly on Sunday</option>
+              </select>
+            </label>
+            <label>Retention
+              <input id="target-retention" type="number" min="3" value="7">
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="button primary" type="submit">Add target and schedule</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <section class="split-layout">
       <article class="panel wide">
         <div class="panel-header">
@@ -78,12 +137,41 @@
       <aside class="panel">
         <div class="panel-header">
           <div>
-            <h2>Storage and guardrails</h2>
-            <p>Safe settings only. Secrets remain in Vault.</p>
+            <h2>Destinations</h2>
+            <p>Where backup artifacts should be written. Secrets remain in Vault.</p>
           </div>
         </div>
-        <dl id="settings-list" class="settings-list"></dl>
+        <div id="destinations-list" class="destination-list"></div>
+        <form id="destination-form" class="stack-form compact-form">
+          <label>Name
+            <input id="destination-name" required placeholder="Cloud object storage">
+          </label>
+          <label>Type
+            <select id="destination-type">
+              <option value="s3">S3 compatible cloud</option>
+              <option value="local">Separate local disk</option>
+              <option value="filesystem">Mounted filesystem</option>
+            </select>
+          </label>
+          <label>URI or path
+            <input id="destination-uri" required placeholder="s3://backups/postgres or /mnt/backup-disk">
+          </label>
+          <label>Notes
+            <input id="destination-notes" placeholder="Encrypted bucket, off-server storage">
+          </label>
+          <button class="button secondary" type="submit">Add destination</button>
+        </form>
       </aside>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Storage and guardrails</h2>
+          <p>Current backup engine settings and safety rules.</p>
+        </div>
+      </div>
+        <dl id="settings-list" class="settings-list"></dl>
     </section>
 
     <section class="panel">
@@ -111,6 +199,6 @@
     </section>
   </main>
 
-  <script src="/admin/app.js?v=admin-auth-20260612b"></script>
+  <script src="/admin/app.js?v=backup-targets-20260612"></script>
 </body>
 </html>

@@ -21,6 +21,7 @@ spec:
       labels:
         app: backups-microservice
     spec:
+      serviceAccountName: backups-microservice
       initContainers:
         - name: wait-postgres
           image: busybox:1.36

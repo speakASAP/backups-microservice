@@ -4,6 +4,8 @@ const store = {
   jobs: [],
   runs: [],
   restores: [],
+  destinations: [],
+  discovery: null,
 };
 
 const page = document.querySelector('[data-page]')?.dataset.page;
@@ -102,24 +104,38 @@ function cronLabel(value) {
 }
 
 async function loadSummary() {
-  store.summary = await api('/dashboard/summary');
+  const [summary, discovery] = await Promise.all([
+    api('/dashboard/summary'),
+    api('/discovery/kubernetes').catch((error) => ({
+      available: false,
+      error: error.message,
+      databases: [],
+      services: [],
+      workloads: [],
+    })),
+  ]);
+  store.summary = summary;
+  store.discovery = discovery;
   store.targets = store.summary.coverage?.map((item) => item.target) || [];
   store.jobs = store.summary.coverage?.flatMap((item) => item.jobs || []) || [];
   store.runs = store.summary.recent_runs || [];
   store.restores = store.summary.restore_requests || [];
+  store.destinations = store.summary.destinations || [];
 }
 
 async function loadRawCollections() {
-  const [targets, jobs, runs, restores] = await Promise.all([
+  const [targets, jobs, runs, restores, destinations] = await Promise.all([
     api('/targets'),
     api('/jobs'),
     api('/backups?limit=80'),
     api('/restore'),
+    api('/destinations').catch(() => []),
   ]);
   store.targets = Array.isArray(targets) ? targets : [];
   store.jobs = Array.isArray(jobs) ? jobs : [];
   store.runs = Array.isArray(runs) ? runs : [];
   store.restores = Array.isArray(restores) ? restores : [];
+  store.destinations = Array.isArray(destinations) ? destinations : [];
 }
 
 async function loadPage() {
@@ -192,6 +208,8 @@ function renderDashboard() {
     : '<div class="muted">No backup targets are configured.</div>';
 
   renderSettings(summary.storage || {}, summary.guardrails || {});
+  renderDiscovery(store.discovery || {});
+  renderDestinations(summary.storage || {});
   renderRunsTable($('runs-table'), summary.recent_runs || []);
 }
 
@@ -235,6 +253,100 @@ function renderSettings(storage, guardrails) {
   $('settings-list').innerHTML = values.map(([label, value]) => {
     return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value ?? '-')}</dd></div>`;
   }).join('');
+}
+
+function renderDiscovery(discovery) {
+  const status = $('discovery-status');
+  if (status) {
+    status.className = `badge ${discovery.available ? 'ok' : 'warn'}`;
+    status.textContent = discovery.available ? 'live' : 'unavailable';
+  }
+
+  const databases = discovery.databases || [];
+  const services = discovery.services || [];
+  $('database-list').innerHTML = databases.length
+    ? databases.map((service) => renderDatabaseOption(service)).join('')
+    : `<div class="muted">${escapeHtml(discovery.error || 'No PostgreSQL services were detected from Kubernetes.')}</div>`;
+
+  $('service-list').innerHTML = services.length
+    ? services.slice(0, 12).map((service) => renderServiceOption(service)).join('')
+    : '<div class="muted">No Kubernetes services discovered.</div>';
+
+  populateDestinationSelect($('target-destination'));
+}
+
+function renderDatabaseOption(service) {
+  const protectedTarget = store.targets.find((target) => target.host === service.host || target.host === service.name);
+  return `<article class="service-card">
+    <div>
+      <h3>${escapeHtml(service.name)}</h3>
+      <div class="meta-line">
+        <span>${escapeHtml(service.namespace)}</span>
+        <span>${escapeHtml(service.host)}</span>
+        <span>ports ${escapeHtml((service.ports || []).join(', ') || '-')}</span>
+        <span>database ${escapeHtml(service.suggested_database || '-')}</span>
+      </div>
+    </div>
+    <button class="button small secondary" type="button"
+      data-protect-db="true"
+      data-name="${escapeHtml(service.name)}"
+      data-host="${escapeHtml(service.host)}"
+      data-port="${escapeHtml(service.suggested_port || 5432)}"
+      data-database="${escapeHtml(service.suggested_database || '')}">
+      ${protectedTarget ? 'Review' : 'Protect'}
+    </button>
+  </article>`;
+}
+
+function renderServiceOption(service) {
+  return `<article class="service-card compact">
+    <div>
+      <strong>${escapeHtml(service.name)}</strong>
+      <div class="meta-line">
+        <span>${escapeHtml(service.namespace)}</span>
+        <span>${escapeHtml(service.backup_kind)}</span>
+        <span>${escapeHtml((service.ports || []).join(', ') || '-')}</span>
+      </div>
+    </div>
+    ${statusBadge(service.backup_ready ? 'postgres' : 'service')}
+  </article>`;
+}
+
+function renderDestinations(storage) {
+  const list = $('destinations-list');
+  if (!list) return;
+  const defaults = store.destinations.length ? store.destinations : [{
+    name: 'Configured WAL-G destination',
+    type: 's3',
+    uri: storage.prefix || storage.bucket || 's3://backups',
+    notes: storage.endpoint_configured ? 'Endpoint configured by environment' : 'Endpoint is not configured',
+    enabled: true,
+  }];
+  list.innerHTML = defaults.map((destination) => `<article class="destination-card">
+    <div>
+      <h3>${escapeHtml(destination.name)}</h3>
+      <div class="meta-line">
+        <span>${escapeHtml(destination.type)}</span>
+        <span class="mono">${escapeHtml(destination.uri)}</span>
+      </div>
+      ${destination.notes ? `<p>${escapeHtml(destination.notes)}</p>` : ''}
+    </div>
+    ${statusBadge(destination.enabled ? 'enabled' : 'disabled')}
+  </article>`).join('');
+  populateDestinationSelect($('target-destination'));
+}
+
+function populateDestinationSelect(select) {
+  if (!select) return;
+  if (store.destinations.length) {
+    select.innerHTML = store.destinations
+      .filter((destination) => destination.enabled)
+      .map((destination) => `<option value="${escapeHtml(destination.uri)}">${escapeHtml(destination.name)} - ${escapeHtml(destination.uri)}</option>`)
+      .join('');
+    return;
+  }
+  const prefix = store.summary?.storage?.prefix || 's3://backups';
+  select.innerHTML = `<option value="${escapeHtml(prefix)}">Configured WAL-G destination - ${escapeHtml(prefix)}</option>`;
 }
 
 function renderRunsTable(tbody, runs) {
@@ -339,6 +451,59 @@ async function createJob(event) {
   await loadPage();
 }
 
+async function createTarget(event) {
+  event.preventDefault();
+  const retention = Number($('target-retention').value || 7);
+  if (retention < 3) {
+    showNotice('Retention below three full backups requires explicit owner approval and is blocked in this UI.', 'error');
+    return;
+  }
+  const targetBody = {
+    name: $('target-name').value.trim(),
+    host: $('target-host').value.trim(),
+    port: Number($('target-port').value || 5432),
+    database_name: $('target-database').value.trim(),
+    vault_secret_ref: $('target-secret').value.trim() || undefined,
+    enabled: true,
+  };
+  const createdTarget = await api('/targets', { method: 'POST', body: JSON.stringify(targetBody) });
+  const destination = $('target-destination').value || store.summary?.storage?.prefix || createdTarget.database_name;
+  await api('/jobs', {
+    method: 'POST',
+    body: JSON.stringify({
+      target_id: createdTarget.id,
+      name: `${createdTarget.name} daily backup`,
+      schedule_cron: $('target-cron').value,
+      retention_full_count: retention,
+      storage_prefix: `${destination.replace(/\/$/, '')}/${createdTarget.database_name}`,
+      enabled: true,
+    }),
+  });
+  $('target-form').reset();
+  $('target-port').value = 5432;
+  $('target-retention').value = 7;
+  $('target-cron').value = '0 2 * * *';
+  showNotice('Backup target and schedule created.');
+  await loadPage();
+}
+
+async function createDestination(event) {
+  event.preventDefault();
+  await api('/destinations', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: $('destination-name').value.trim(),
+      type: $('destination-type').value,
+      uri: $('destination-uri').value.trim(),
+      notes: $('destination-notes').value.trim() || undefined,
+      enabled: true,
+    }),
+  });
+  $('destination-form').reset();
+  showNotice('Backup destination added.');
+  await loadPage();
+}
+
 async function submitRestore(event) {
   event.preventDefault();
   if (!$('restore-confirm').checked) {
@@ -382,6 +547,14 @@ document.addEventListener('click', async (event) => {
       $('restore-form-panel').classList.remove('hidden');
       $('restore-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    if (target.dataset.protectDb) {
+      $('target-name').value = target.dataset.name || '';
+      $('target-host').value = target.dataset.host || '';
+      $('target-port').value = target.dataset.port || 5432;
+      $('target-database').value = target.dataset.database || '';
+      $('target-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('target-secret').focus();
+    }
   } catch (error) {
     showNotice(error.message, 'error');
   }
@@ -391,6 +564,8 @@ document.addEventListener('submit', async (event) => {
   try {
     if (event.target.id === 'login-form') await login(event);
     if (event.target.id === 'job-form') await createJob(event);
+    if (event.target.id === 'target-form') await createTarget(event);
+    if (event.target.id === 'destination-form') await createDestination(event);
     if (event.target.id === 'restore-form') await submitRestore(event);
   } catch (error) {
     showNotice(error.message, 'error');

@@ -16,6 +16,8 @@ import { RestoreModule } from './restore/restore.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { JwtRolesGuard } from './auth/jwt-roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DestinationsModule } from './destinations/destinations.module';
+import { DiscoveryModule } from './discovery/discovery.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     RetentionModule,
     RestoreModule,
     NotificationsModule,
+    DestinationsModule,
+    DiscoveryModule,
     DashboardModule,
   ],
   controllers: [HealthController, InfoController],

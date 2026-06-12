@@ -5,6 +5,7 @@ import { BackupRun, BackupRunStatus } from '../backup/entities/backup-run.entity
 import { BackupJob } from '../jobs/entities/backup-job.entity';
 import { RestoreRequest, RestoreStatus } from '../restore/entities/restore-request.entity';
 import { BackupTarget } from '../targets/entities/backup-target.entity';
+import { BackupDestination } from '../destinations/entities/backup-destination.entity';
 
 @Injectable()
 export class DashboardService {
@@ -13,14 +14,16 @@ export class DashboardService {
     @InjectRepository(BackupJob) private readonly jobRepo: Repository<BackupJob>,
     @InjectRepository(BackupRun) private readonly runRepo: Repository<BackupRun>,
     @InjectRepository(RestoreRequest) private readonly restoreRepo: Repository<RestoreRequest>,
+    @InjectRepository(BackupDestination) private readonly destinationRepo: Repository<BackupDestination>,
   ) {}
 
   async summary() {
-    const [targets, jobs, recentRuns, restores] = await Promise.all([
+    const [targets, jobs, recentRuns, restores, destinations] = await Promise.all([
       this.targetRepo.find({ order: { created_at: 'DESC' } }),
       this.jobRepo.find({ relations: ['target'], order: { created_at: 'DESC' } }),
       this.runRepo.find({ relations: ['job'], order: { started_at: 'DESC' }, take: 80 }),
       this.restoreRepo.find({ relations: ['backup_run', 'target'], order: { created_at: 'DESC' }, take: 40 }),
+      this.destinationRepo.find({ order: { enabled: 'DESC', priority: 'ASC', created_at: 'DESC' } }),
     ]);
 
     const now = Date.now();
@@ -56,9 +59,12 @@ export class DashboardService {
         runs_24h: recent24h.length,
         failed_24h: failed24h.length,
         restore_requests: restores.length,
+        destinations_total: destinations.length,
+        destinations_enabled: destinations.filter((destination) => destination.enabled).length,
         latest_status: latestRun?.status || 'none',
         latest_success_at: latestSuccess?.completed_at || null,
       },
+      destinations,
       coverage: targets.map((target) => {
         const targetJobs = jobsByTarget.get(target.id) || [];
         const targetRuns = recentRuns.filter((run) => targetJobs.some((job) => job.id === run.job_id));
