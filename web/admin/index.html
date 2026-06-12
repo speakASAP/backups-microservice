@@ -3,167 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Backups Admin — Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Backups Admin - Dashboard</title>
+  <link rel="stylesheet" href="/admin/styles.css">
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-  <!-- Nav -->
-  <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-6">
-    <span class="text-lg font-bold text-white">🗄️ Backups Admin</span>
-    <a href="/admin" class="text-blue-400 font-medium">Dashboard</a>
-    <a href="/admin/jobs.html" class="text-gray-400 hover:text-white">Jobs</a>
-    <a href="/admin/restore.html" class="text-gray-400 hover:text-white">Restore</a>
-    <a href="/" class="ml-auto text-gray-500 hover:text-gray-300 text-sm">← Home</a>
-  </nav>
-
-  <div class="p-6 max-w-6xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
-
-    <!-- Stats row -->
-    <div class="grid grid-cols-4 gap-4 mb-8">
-      <div class="bg-gray-800 rounded-lg p-5">
-        <div class="text-gray-400 text-sm mb-1">Targets</div>
-        <div id="stat-targets" class="text-3xl font-bold text-blue-400">—</div>
-      </div>
-      <div class="bg-gray-800 rounded-lg p-5">
-        <div class="text-gray-400 text-sm mb-1">Active Jobs</div>
-        <div id="stat-jobs" class="text-3xl font-bold text-green-400">—</div>
-      </div>
-      <div class="bg-gray-800 rounded-lg p-5">
-        <div class="text-gray-400 text-sm mb-1">Runs (24h)</div>
-        <div id="stat-runs" class="text-3xl font-bold text-yellow-400">—</div>
-      </div>
-      <div class="bg-gray-800 rounded-lg p-5">
-        <div class="text-gray-400 text-sm mb-1">Failed (24h)</div>
-        <div id="stat-failed" class="text-3xl font-bold text-red-400">—</div>
-      </div>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin" aria-label="Backups dashboard">
+      <span class="brand-mark">B</span>
+      <span>
+        <strong>Backups</strong>
+        <small>Disaster recovery console</small>
+      </span>
+    </a>
+    <nav class="nav-links" aria-label="Admin navigation">
+      <a class="active" href="/admin">Dashboard</a>
+      <a href="/admin/jobs.html">Schedules</a>
+      <a href="/admin/restore.html">Restore</a>
+    </nav>
+    <div class="token-control">
+      <input id="token-input" type="password" autocomplete="off" placeholder="JWT or service token">
+      <button class="icon-button" type="button" data-action="save-token" title="Save token" aria-label="Save token">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+      </button>
     </div>
+  </header>
 
-    <!-- Recent runs -->
-    <div class="bg-gray-800 rounded-lg overflow-hidden mb-8">
-      <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-        <h2 class="font-semibold">Recent Backup Runs</h2>
-        <button onclick="triggerManual()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded transition">Trigger Manual</button>
+  <main class="page-shell" data-page="dashboard">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">Operational state</p>
+        <h1>Backup coverage</h1>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="text-gray-400 border-b border-gray-700">
+      <div class="heading-actions">
+        <button class="button secondary" type="button" data-action="refresh">Refresh</button>
+        <a class="button primary" href="/admin/jobs.html">Manage schedules</a>
+      </div>
+    </section>
+
+    <div id="notice" class="notice hidden"></div>
+
+    <section class="metric-grid" aria-label="Backup metrics">
+      <article class="metric">
+        <span>Protected sources</span>
+        <strong id="metric-protected">-</strong>
+      </article>
+      <article class="metric">
+        <span>Enabled schedules</span>
+        <strong id="metric-jobs">-</strong>
+      </article>
+      <article class="metric">
+        <span>Runs in 24h</span>
+        <strong id="metric-runs">-</strong>
+      </article>
+      <article class="metric warning">
+        <span>Failures in 24h</span>
+        <strong id="metric-failed">-</strong>
+      </article>
+      <article class="metric">
+        <span>Latest status</span>
+        <strong id="metric-latest">-</strong>
+      </article>
+    </section>
+
+    <section class="split-layout">
+      <article class="panel wide">
+        <div class="panel-header">
+          <div>
+            <h2>Service and database coverage</h2>
+            <p>Configured sources, schedules, retention, and latest backup evidence.</p>
+          </div>
+        </div>
+        <div id="coverage-list" class="coverage-list"></div>
+      </article>
+
+      <aside class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Storage and guardrails</h2>
+            <p>Safe settings only. Secrets remain in Vault.</p>
+          </div>
+        </div>
+        <dl id="settings-list" class="settings-list"></dl>
+      </aside>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Recent backup runs</h2>
+          <p>Last 20 runs across configured schedules.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left">Job</th>
-              <th class="px-6 py-3 text-left">Status</th>
-              <th class="px-6 py-3 text-left">Triggered</th>
-              <th class="px-6 py-3 text-left">Started</th>
-              <th class="px-6 py-3 text-left">Duration</th>
+              <th>Job</th>
+              <th>Status</th>
+              <th>Triggered</th>
+              <th>Started</th>
+              <th>Duration</th>
+              <th>Storage path</th>
             </tr>
           </thead>
-          <tbody id="runs-table">
-            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Loading...</td></tr>
-          </tbody>
+          <tbody id="runs-table"></tbody>
         </table>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <!-- Targets -->
-    <div class="bg-gray-800 rounded-lg overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-700">
-        <h2 class="font-semibold">Backup Targets</h2>
-      </div>
-      <div id="targets-list" class="p-6 text-gray-400 text-sm">Loading...</div>
-    </div>
-  </div>
-
-  <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div class="bg-gray-800 rounded-lg p-6 w-96">
-      <h3 class="font-semibold mb-4">Trigger Manual Backup</h3>
-      <label class="block text-sm text-gray-400 mb-2">Job ID</label>
-      <input id="manual-job-id" class="w-full bg-gray-700 rounded px-3 py-2 text-sm mb-4" placeholder="UUID">
-      <div class="flex gap-3">
-        <button onclick="submitManual()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded transition">Trigger</button>
-        <button onclick="closeModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded transition">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const token = localStorage.getItem('backups_token') || '';
-
-    function statusBadge(s) {
-      const map = { success: 'bg-green-900 text-green-300', failed: 'bg-red-900 text-red-300', running: 'bg-yellow-900 text-yellow-300' };
-      return `<span class="px-2 py-0.5 rounded text-xs font-medium ${map[s] || 'bg-gray-700 text-gray-300'}">${s}</span>`;
-    }
-
-    function duration(start, end) {
-      if (!end) return '…';
-      const s = Math.round((new Date(end) - new Date(start)) / 1000);
-      return s < 60 ? `${s}s` : `${Math.floor(s/60)}m ${s%60}s`;
-    }
-
-    async function load() {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      try {
-        const [targetsR, jobsR, runsR] = await Promise.all([
-          fetch('/targets', { headers }),
-          fetch('/jobs', { headers }),
-          fetch('/backups?limit=20', { headers }),
-        ]);
-        const targets = await targetsR.json();
-        const jobs = await jobsR.json();
-        const runs = await runsR.json();
-
-        document.getElementById('stat-targets').textContent = Array.isArray(targets) ? targets.length : '?';
-        document.getElementById('stat-jobs').textContent = Array.isArray(jobs) ? jobs.filter(j => j.enabled).length : '?';
-        const now = Date.now();
-        const day = 86400000;
-        const recent = Array.isArray(runs) ? runs.filter(r => (now - new Date(r.started_at)) < day) : [];
-        document.getElementById('stat-runs').textContent = recent.length;
-        document.getElementById('stat-failed').textContent = recent.filter(r => r.status === 'failed').length;
-
-        const tbody = document.getElementById('runs-table');
-        if (!Array.isArray(runs) || runs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No runs yet</td></tr>';
-        } else {
-          tbody.innerHTML = runs.map(r => `<tr class="border-t border-gray-700">
-            <td class="px-6 py-3">${r.job?.name || r.job_id?.slice(0,8) || '—'}</td>
-            <td class="px-6 py-3">${statusBadge(r.status)}</td>
-            <td class="px-6 py-3 text-gray-400">${r.triggered_by || '—'}</td>
-            <td class="px-6 py-3 text-gray-400">${r.started_at ? new Date(r.started_at).toLocaleString() : '—'}</td>
-            <td class="px-6 py-3 text-gray-400">${duration(r.started_at, r.completed_at)}</td>
-          </tr>`).join('');
-        }
-
-        const targetsDiv = document.getElementById('targets-list');
-        if (!Array.isArray(targets) || targets.length === 0) {
-          targetsDiv.textContent = 'No targets configured.';
-        } else {
-          targetsDiv.innerHTML = targets.map(t => `<div class="flex items-center gap-4 py-2 border-b border-gray-700 last:border-0">
-            <span class="w-2 h-2 rounded-full ${t.enabled ? 'bg-green-400' : 'bg-gray-600'}"></span>
-            <span class="font-medium">${t.name}</span>
-            <span class="text-gray-400">${t.host}:${t.port}/${t.database_name}</span>
-          </div>`).join('');
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function triggerManual() { document.getElementById('modal').classList.remove('hidden'); }
-    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
-    async function submitManual() {
-      const jobId = document.getElementById('manual-job-id').value.trim();
-      if (!jobId) return;
-      const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-      try {
-        const r = await fetch('/backups/trigger', { method: 'POST', headers, body: JSON.stringify({ job_id: jobId }) });
-        const data = await r.json();
-        closeModal();
-        alert(r.ok ? `Triggered run: ${data.id}` : `Error: ${JSON.stringify(data)}`);
-        load();
-      } catch (e) { alert('Request failed: ' + e.message); }
-    }
-
-    load();
-    setInterval(load, 30000);
-  </script>
+  <script src="/admin/app.js"></script>
 </body>
 </html>

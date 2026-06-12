@@ -1,6 +1,6 @@
 {
-  "stage": "bootstrap",
-  "health": "unknown",
-  "last_updated": "2026-05-30",
-  "notes": "Scaffold complete. Vault secrets and K8s deploy pending."
+  "stage": "intent-preservation-and-frontend",
+  "health": "healthy-public-health-check",
+  "last_updated": "2026-06-12",
+  "notes": "Intent preservation docs added locally. Dashboard summary API and frontend management UI prepared for build/deploy. Next domain goal: restore verification evidence."
 }
