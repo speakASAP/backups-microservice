@@ -33,3 +33,5 @@
 - [x] Deploy configurable schedule policies after owner approval
 
 - [x] Deploy restore verification hardening after owner approval
+- [x] Revalidate `BAK-G4` restore verification evidence on `main` after owner request
+- [ ] Select or define the next roadmap goal (`BAK-G14`) before further implementation
