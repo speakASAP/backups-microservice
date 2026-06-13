@@ -8,7 +8,7 @@
 - [x] Add dashboard summary API for backup management UI
 - [x] Frontend dashboard (backup history, health, alerts)
 - [x] Create PostgreSQL schema `backups` with migrations
-- [ ] Implement BackupsModule: pg_dump to MinIO nightly
+- [x] Implement BackupsModule: pg_dump to MinIO nightly
 - [ ] Implement SchedulesModule: configurable cron policies
 - [ ] Implement RestoresModule: restore from MinIO + verify
 - [ ] Add NotificationsModule integration (success/failure)
@@ -27,3 +27,5 @@
 - [x] Automate additive schema readiness before service startup
 
 - [ ] Deploy PostgreSQL schema namespace move after owner approval
+
+- [ ] Deploy default nightly PostgreSQL backup bootstrap after owner approval
