@@ -6,7 +6,7 @@ status: complete
 validated_artifact: implementation-goals/GOAL-06-safety-audit-controls.md
 owner: validator
 created: 2026-06-12
-last_updated: 2026-06-12
+last_updated: 2026-06-13
 branch: codex/backups-goal-06-safety-audit-controls
 worktree: /home/ssf/Documents/Github/backups-microservice-goal06
 ```
@@ -20,6 +20,12 @@ Goal 06 safety and audit controls on branch `codex/backups-goal-06-safety-audit-
 Validated retention guardrails, backup-run deletion gating, production restore approval metadata, structured audit logging, UI safety controls, public restore output sanitization, auth boundaries, and secret-safe changed files.
 
 ## Evidence
+
+Supplemental validation on 2026-06-13:
+
+- Fixed `.gitignore` so source and intent files containing `backup` are visible to Git instead of ignored by a broad `*backup*` pattern.
+- Added missing `src/backup/dto/delete-backup-run.dto.ts`, required by `BackupController`.
+- Added `test/safety-audit-controls.spec.ts` covering retention approval metadata, backup-run deletion blocking, public backup-run output sanitization, and production restore approval evidence.
 
 Pre-coding evidence:
 
@@ -52,10 +58,10 @@ git diff --check
 
 Results:
 
-- `npm run build`: passed after using the existing remote dependency tree for the separate worktree.
-- `npm test -- --runInBand`: passed, 2 suites and 5 tests.
-- `node --check web/admin/app.js`: passed.
-- `git diff --check`: passed.
+- `npm run build`: passed after using the existing remote dependency tree for the separate worktree; supplemental 2026-06-13 run passed on `/home/ssf/Documents/Github/backups-microservice`.
+- `npm test -- --runInBand`: passed, 2 suites and 5 tests originally; supplemental 2026-06-13 run passed with 4 suites and 12 tests.
+- `node --check web/admin/app.js`: passed originally and in the supplemental 2026-06-13 run.
+- `git diff --check`: passed originally and in the supplemental 2026-06-13 run.
 - Unauthenticated runtime checks against production returned `401` for `DELETE /backups/:id`, `POST /restore`, and `POST /jobs`.
 - Secret-like assignment scan over changed Goal 06 areas found no literal secret values. The only scan hit was the existing WAL-G environment variable name `AWS_SECRET_ACCESS_KEY` in existing code, not a value.
 
@@ -89,4 +95,4 @@ None.
 
 ## Recommendation
 
-Proceed to Goal 07 production readiness after owner review. Do not deploy, commit, or push until explicitly requested.
+Goal 06 remains complete after supplemental validation. Current roadmap state says Goal 07 is already complete; next action is owner review of the remote branch state. Do not deploy, commit, or push unless explicitly requested.
