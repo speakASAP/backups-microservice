@@ -11,7 +11,7 @@
 - [x] Implement BackupsModule: pg_dump to MinIO nightly
 - [x] Implement SchedulesModule: configurable cron policies
 - [x] Implement RestoresModule: restore from MinIO + verify
-- [ ] Add NotificationsModule integration (success/failure)
+- [x] Add NotificationsModule integration (success/failure)
 - [ ] Add LoggingModule integration
 - [x] Implement restore verification state and evidence
 - [x] Add coverage model for service owner, RPO/RTO, source type, and criticality

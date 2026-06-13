@@ -27,13 +27,14 @@ To print the current resume checkpoint from the shell:
 9. `GOAL-09-nightly-pgbackup-minio.md` - default nightly PostgreSQL logical backup job to MinIO.
 10. `GOAL-10-configurable-schedules.md` - configurable hourly/daily/weekly/custom cron schedule policies.
 11. `GOAL-11-restore-from-minio-verify.md` - restore from MinIO/WAL-G and update verification evidence.
+12. `GOAL-12-notifications-integration.md` - success/failure notifications for backup, restore, verification, and retention events.
 
 ## Parallelization
 
 Safe default:
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11
+01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12
 ```
 
 Goal 05 exploration can begin while Goal 04 implementation is active only if it is documentation-only and does not alter shared entities, migrations, DTOs, or UI contracts. Goal 06 depends on the restore verification model from Goal 04.

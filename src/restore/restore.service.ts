@@ -139,8 +139,13 @@ export class RestoreService {
         restore_request_id: request.id,
         reason: request.approval_reason || 'Restore completed after approved request.',
       });
-      await this.notifications.send('restore.completed', `Restore completed for target: ${target.name}`, {
-        request_id: request.id, backup_run_id: backupRun.id,
+      await this.notifications.restoreCompleted(target.name, {
+        request_id: request.id,
+        backup_run_id: backupRun.id,
+      });
+      await this.notifications.verificationVerified(target.name, {
+        request_id: request.id,
+        backup_run_id: backupRun.id,
       });
     } else {
       request.status = RestoreStatus.FAILED;
@@ -160,8 +165,15 @@ export class RestoreService {
         reason: request.approval_reason || 'Restore failed after approved request.',
         metadata: { error_tail: request.error_message },
       });
-      await this.notifications.send('restore.failed', `Restore FAILED for target: ${target.name}`, {
-        request_id: request.id, error: request.error_message,
+      await this.notifications.restoreFailed(target.name, {
+        request_id: request.id,
+        backup_run_id: backupRun.id,
+        error: request.error_message,
+      });
+      await this.notifications.verificationFailed(target.name, {
+        request_id: request.id,
+        backup_run_id: backupRun.id,
+        error: request.error_message,
       });
       this.logger.error(`Restore failed request=${request.id}`, output, 'RestoreService');
     }
