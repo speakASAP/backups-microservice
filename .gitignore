@@ -1,14 +1,14 @@
+# Required secret-blocking patterns
+*backup*
+*bck*
+
 # Backup artifacts only; do not ignore source paths that contain backup.
 *.backup
 *.backup.*
 *.bck
 *.bck.*
 *.bak
-*backup*
-*bck*
-!docs/orchestrator/backup-intent-plan.md
-!src/backup/
-!src/backup/**
+*.bak.*
 
 # Dependencies
 node_modules/
@@ -98,7 +98,8 @@ venv.bak/
 local_config.py
 local_settings.py
 # Backup files
-*.backup*
+*.backup
+*.backup.*
 *.old
 # Compressed files
 *.zip

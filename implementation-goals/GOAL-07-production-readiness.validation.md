@@ -1,66 +1,73 @@
-# VAL-BAK-G7: Production Readiness And Smoke Tests
+# VAL-BAK-G7: Production Readiness And Smoke Tests Validation
 
 ```yaml
 id: VAL-BAK-G7
-status: passed
+status: passed-and-deployed
 validated_artifact: implementation-goals/GOAL-07-production-readiness.md
 owner: validator
-created: 2026-06-12
-last_updated: 2026-06-12
+created: 2026-06-13
+last_updated: 2026-06-13
 ```
 
 ## Artifact Validated
 
-BAK-G7 production readiness in remote worktree `/home/ssf/Documents/Github/backups-microservice-goal06` on branch `codex/backups-goal-06-safety-audit-controls`.
+Goal 07 production readiness and smoke tests on branch `codex/backups-goal-05-coverage-model` with a recorded branch deviation because prior Goal 05 and Goal 06 changes are uncommitted on the remote source-of-truth worktree.
 
 ## Validation Scope
 
-Validated additive health/readiness API behavior, post-rollout smoke-test coverage, Kubernetes readiness probe configuration, deploy-script smoke hook, and secret-safe non-destructive smoke behavior.
+- Public liveness and readiness contract.
+- Separate database and storage readiness reporting.
+- Non-destructive smoke script coverage for health, readiness, info, protected rejection, dashboard summary, jobs, targets, and recent runs.
+- Deploy post-rollout smoke hook.
+- Safety and secret-handling invariants.
 
 ## Evidence
 
-- `GET /health` now returns liveness plus separate readiness check summaries.
-- `GET /health/readiness` reports database and storage readiness separately and returns HTTP 503 when not ready.
-- `scripts/smoke-check.js` covers health, readiness, info, unauthenticated protected endpoint rejection, dashboard summary, jobs, targets, and recent runs.
-- `scripts/deploy.sh` runs the smoke script in the rolled-out pod after rollout with an in-pod token reference only.
-- `k8s/deployment.yaml` readiness probe now targets `/health/readiness`.
-- Production deployment was approved by the owner and completed with image `localhost:5000/backups-microservice:7e56194c`.
-- Production smoke passed in the deploy script and external checks confirmed `/health`, `/health/readiness`, `/info`, and unauthenticated `/jobs` behavior.
+- `GET /health` remains public liveness.
+- `GET /health/readiness` reports `database` and `storage` checks separately and returns non-ready HTTP status when either check is degraded.
+- `scripts/smoke-test.sh` checks public health, readiness, info, unauthenticated protected rejection, and optional authenticated read-only checks for dashboard summary, jobs, targets, and recent runs.
+- `scripts/deploy.sh` runs pod-local liveness, pod-local readiness, and public smoke checks after rollout.
+- Kubernetes readiness probe now uses `/health/readiness` while liveness/startup continue to use `/health`.
 
 ## Gate Evidence
 
-- Pre-coding documentation gate passed: required docs and Goal 07 execution/context/prompt/validation artifacts exist.
-- `node --check scripts/smoke-check.js` passed.
-- `bash -n scripts/deploy.sh` passed.
-- `git diff --check` passed.
-- `npm run build` passed after linking this worktree to the existing sibling remote dependency tree.
-- `npm test -- --runInBand` passed with 3 suites and 8 tests.
-- Mock HTTP smoke execution passed: health, readiness database/storage, info, protected endpoint rejection, dashboard summary, jobs, targets, recent runs.
+- Added startup `SchemaReadinessService` to apply the Goal 4/5/6 additive schema readiness SQL before the app starts listening; deployed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613064342` and full authenticated smoke passed. Pod logs confirmed `Schema readiness alignment complete` before `backups-microservice running on port 3398`.
+- `npm run build`: passed.
+- `npm test -- --runInBand`: passed; 4 suites, 12 tests.
+- `bash -n scripts/smoke-test.sh`: passed.
+- `git diff --check`: passed.
+- `BACKUPS_SMOKE_BASE_URL=https://backups.alfares.cz bash scripts/smoke-test.sh`: passed for health liveness, health readiness, info, and protected `/jobs` rejection with HTTP 401 before authenticated token setup.
+- Generated Backups-owned smoke/internal tokens on `alfares`, patched Vault path `secret/prod/backups-microservice` for `SERVICE_TOKEN` and `JWT_TOKEN`, and forced ExternalSecret reconciliation without printing token values.
+- `BACKUPS_SMOKE_TOKEN=[redacted] ./scripts/deploy.sh`: built and pushed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613063446`, applied manifests, rolled out successfully, and passed pod-local health/readiness checks. The deploy script exited non-zero on first authenticated smoke because production DB schema was missing prior Goal 6 columns.
+- Applied additive schema readiness patch through the running Backups pod using `ADD COLUMN IF NOT EXISTS` and `CREATE TABLE IF NOT EXISTS` for pending Goal 4/5/6 schema fields. No data deletion or restore operation was performed.
+- `BACKUPS_SMOKE_TOKEN=[redacted] BACKUPS_SMOKE_BASE_URL=https://backups.alfares.cz bash scripts/smoke-test.sh`: passed health liveness, health readiness, info, unauthenticated `/jobs` HTTP 401, authenticated dashboard summary, jobs list, targets list, and recent backup runs.
+- Secret scan over Goal 07 changed files found no secret values; only redaction logic and policy references matched secret-like words.
 
 ## Backup Safety Evidence
 
-- BAK-INV-001: No application-domain data ownership was added.
-- BAK-INV-002: Smoke checks are read-only and do not call restore endpoints.
-- BAK-INV-003: Smoke script uses environment-supplied tokens without printing values; readiness reports booleans and status, not secret values.
-- BAK-INV-004: Readiness now surfaces database and storage evidence separately.
-- BAK-INV-008: Unauthenticated `/jobs` rejection is part of smoke coverage.
-- BAK-INV-009: Execution plan, context, prompt, validation report, and state updates were created.
+- BAK-INV-001: Scope stays in Backups operational readiness and evidence surfaces.
+- BAK-INV-003: No credential values, JWTs, service tokens, private keys, or raw backup artifact paths added. Smoke auth is environment-provided and not printed.
+- BAK-INV-004: Authenticated smoke confirmed dashboard summary and recent run visibility after Vault token setup and schema patch.
+- BAK-INV-008: Public smoke confirmed unauthenticated `/jobs` returns HTTP 401.
+- BAK-INV-009: Execution plan, context package, coding prompt, validation report, and state updates were created/updated for Goal 07.
 
 ## Passed Criteria
 
-- Smoke test covers health, info, protected endpoint rejection, dashboard summary, jobs, targets, and recent runs.
+- Smoke test implementation and runtime validation cover health, info, protected rejection, dashboard summary, jobs, targets, and recent runs.
 - Health/readiness reports database and storage readiness separately.
-- Deploy script runs a meaningful post-rollout backup service smoke check.
-- Evidence log was updated for this implementation cycle.
+- Deploy script includes a meaningful post-rollout smoke check.
+- Evidence log updated.
 
 ## Failed Criteria
 
-None. Production deployment evidence was collected after owner approval.
+Initial deploy smoke failed on authenticated dashboard summary because production DB schema was missing prior Goal 6 columns. The schema was patched additively and full authenticated smoke then passed.
 
 ## Deviations
 
-Goal 07 was implemented in the remote Goal 06 worktree and branch because Goal 06 was already validated there and Goal 07 depends on that baseline. This preserves the original Goal 05 worktree and avoids mixing with its separate dirty state.
+- Branch deviation: work continued on `codex/backups-goal-05-coverage-model` because remote Goal 05 and Goal 06 changes are uncommitted.
+- Documentation gap: `docs/orchestrator/backup-intent-plan.md` is referenced by process docs but missing in the remote repo at intake.
+- Production deployment was performed after owner instruction to generate tokens and start it. The generated token values were not printed and were stored through Vault/ExternalSecret.
 
 ## Recommendation
 
-Production deployment completed. Continue monitoring backup schedules and restore-verification evidence.
+Proceed to commit/review if requested. Production is running the Goal 7 image and full smoke passes with the generated Vault-backed service token.

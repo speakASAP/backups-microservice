@@ -6,44 +6,48 @@ status: active
 source_goal: implementation-goals/GOAL-06-safety-audit-controls.md
 source_plan: implementation-goals/GOAL-06-safety-audit-controls.execution-plan.md
 owner: orchestrator
-created: 2026-06-12
-last_updated: 2026-06-12
+created: 2026-06-13
+last_updated: 2026-06-13
 ```
 
 ## Assignment
 
-Implement Goal 06 safety and audit controls for retention policies, backup-run deletion, production restore approval, and audit evidence in the remote Goal 06 worktree only.
+Implement BAK-G6 safety and audit controls in the remote `backups-microservice` repository. Harden retention, deletion, restore approval, and audit evidence while preserving restore verification, coverage model, Auth, and secret-handling behavior.
 
 ## Scope
 
-- Add structured audit logging for safety-sensitive operations.
-- Add retention approval metadata to backup jobs and enforce retention minimum rules in the service layer.
-- Gate backup-run deletion behind explicit owner approval metadata and audit reason, or fail closed when metadata is absent.
-- Add restore approval fields to DTO/entity/service and require them for production restore requests.
-- Update admin UI forms/tables to collect and show approval evidence.
-- Add an additive migration and update Goal 06 validation/state artifacts.
+- Add audit event persistence and migration.
+- Add retention approval metadata to backup jobs and enforce it in create/update flows.
+- Disable backup-run deletion by default and audit denied attempts.
+- Require explicit restore approval fields and actor evidence before creating restore requests.
+- Update admin schedules/restore UI so low retention and restore are visually distinct and require reason/confirmation evidence.
+- Add focused tests for new safety contracts.
+- Update validation and state artifacts.
 
 ## Non-Goals
 
-- No production restore execution outside existing request flow.
-- No deletion of existing backup runs during implementation.
+- No real backup-run deletion.
+- No production restore.
 - No deployment, commit, or push.
-- No edits to `BUSINESS.md`, `GOALS.md`, secrets, or production environment files.
-- No new source-category executor implementation.
+- No secret values in docs, prompts, tests, logs, UI, or API responses.
+- No changes to `BUSINESS.md` or `GOALS.md`.
+- No weakening of the global Auth guard.
 
 ## Safety Requirements
 
-- Retention below three full backups requires approval actor and reason.
-- Production restore requires approval actor, reason, target environment, and explicit confirmation metadata.
-- Backup-run deletion without approval metadata must fail closed.
-- Audit records must be structured and secret-safe.
-- Public backup run serialization must continue omitting `storage_path` and `walg_output`.
-- UI, logs, tests, docs, and prompts must not include secret values or raw backup artifact paths.
-- Existing management auth behavior must not be weakened.
+- Retention below three full backups must fail unless explicit owner approval metadata is present.
+- Restore submission must include actor, reason, exact target confirmation, exact backup run confirmation, and production confirmation.
+- Audit events must include actor, action, reason, and any applicable target/job/run/request IDs.
+- Public backup responses must keep hiding `storage_path` and `walg_output`.
+- Restore history must not return raw WAL-G output or secrets.
 
 ## Implementation Notes
 
-Follow local NestJS/TypeORM patterns: entity + module + service, additive migration, DTO validation with `class-validator`, and controller extraction of `req.user.sub` or email where available. Prefer service-layer guardrails so UI checks cannot be bypassed by API clients.
+- Use existing NestJS/TypeORM patterns.
+- Keep DTO validation with `class-validator` decorators.
+- The global `JwtRolesGuard` already protects management endpoints; controller changes may read `req.user` for actor evidence.
+- Goal 05 uncommitted changes are present; do not revert them.
+- Use synthetic data in tests.
 
 ## Validation Required
 
@@ -51,9 +55,11 @@ Follow local NestJS/TypeORM patterns: entity + module + service, additive migrat
 npm run build
 npm test -- --runInBand
 node --check web/admin/app.js
+curl -sk -o /dev/null -w "%{http_code}
+" https://backups.alfares.cz/jobs
 ```
 
-Also perform manual safety review for retention, deletion, restore approval, audit fields, auth boundaries, and secret exposure.
+Also review changed files for secret exposure and confirm no code path deletes backup-run rows.
 
 ## Report Required
 

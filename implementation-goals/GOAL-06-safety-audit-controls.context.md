@@ -1,17 +1,17 @@
-# CTX-BAK-G6: Safety And Audit Controls Context
+# CTX-BAK-G6: Safety And Audit Controls Context Package
 
 ```yaml
 id: CTX-BAK-G6
 status: active
 source_goal: implementation-goals/GOAL-06-safety-audit-controls.md
 owner: orchestrator
-created: 2026-06-12
-last_updated: 2026-06-12
+created: 2026-06-13
+last_updated: 2026-06-13
 ```
 
 ## Purpose
 
-This context package preserves the Goal 06 safety intent before source edits. It summarizes current behavior, target behavior, constraints, and validation expectations for retention, deletion, restore approval, and audit logging.
+Provide implementation context for hardening retention, backup-run deletion, production restore approval, and audit evidence without weakening Auth, restore verification, coverage model, or secret-handling boundaries.
 
 ## Required Reading
 
@@ -21,6 +21,7 @@ This context package preserves the Goal 06 safety intent before source edits. It
 - `docs/orchestrator/INTENT.md`
 - `docs/orchestrator/backup-intent-plan.md`
 - `docs/IMPLEMENTATION_STATE.md`
+- `docs/IMPLEMENTATION_ORCHESTRATOR.md`
 - `docs/AGENT_ORCHESTRATION.md`
 - `docs/process/INTENT_PRESERVATION_SYSTEM.md`
 - `docs/process/PROJECT_INVARIANTS.md`
@@ -31,44 +32,45 @@ This context package preserves the Goal 06 safety intent before source edits. It
 
 ## Relevant Contracts
 
-- Retention below three full backups is unsafe unless owner approval metadata is recorded.
-- Agents must not delete backup runs or restore production targets without human approval.
-- Production restore approval must name actor, target, backup run, and reason.
-- Audit records for destructive or risk-changing actions must include actor, target, job, run, action, and reason where applicable.
-- Management endpoints remain protected by the global JWT roles guard.
-- Secrets, WAL-G output, and storage artifact paths must not be exposed in UI, logs, prompts, reports, or public API serialization.
+- Auth: global `JwtRolesGuard` protects management endpoints by default; public exceptions are explicit.
+- Backup runs: public serialization hides `storage_path` and `walg_output`; preserve this.
+- Retention: counts below three full backups are unsafe unless owner approval metadata is supplied and audited.
+- Restore: production restore is destructive and must include target, backup run, actor, and reason evidence.
+- Audit: destructive or risk-changing operations must record actor, target, job, run, action, and reason where applicable.
+- Coverage: Goal 05 contract-only source categories remain non-executable for backup jobs.
 
 ## Current Behavior
 
-- `CreateJobDto` and `UpdateJobDto` allow `retention_full_count >= 1`.
-- Admin UI blocks retention below three, but the API does not.
-- `DELETE /backups/:id` removes the backup run row with no approval reason.
-- Restore requests accept only backup run ID and target ID, then execution starts asynchronously.
-- Restore history stores `requested_by`, status, and WAL-G output internally but has no approval actor/reason/environment fields.
-- No structured audit log entity exists.
+- `CreateJobDto` and `UpdateJobDto` allow `retention_full_count` as low as 1.
+- Admin UI blocks retention below 3, but backend does not.
+- `BackupService.remove` physically removes backup-run rows.
+- `BackupController.remove` accepts no actor/reason body and performs deletion.
+- `CreateRestoreDto` only includes backup run and target IDs.
+- `RestoreController` falls back to `unknown` actor if the guard payload is missing.
+- `RestoreService.create` immediately starts execution after request creation.
+- Existing UI warns about restore but says backend approval fields are a future goal.
 
 ## Target Behavior
 
-- Jobs with retention below three are rejected unless explicit approval metadata is supplied.
-- Retention weakening records approval metadata and an audit event.
-- Backup-run deletion is disabled by default or requires explicit approval actor/reason and records an audit event.
-- Production restore requires explicit approval actor, reason, target environment, and confirmation of backup run and target.
-- Restore requests persist approval evidence before execution starts.
-- Admin UI collects approval evidence for restore and shows retention approval state without exposing secrets.
+- Backend blocks or owner-gates retention below three full backups using actor, reason, and timestamp metadata.
+- Backup-run deletion is disabled by default and denied attempts are audited with actor/run/job/action/reason when available.
+- Restore create requires explicit approval actor, reason, target confirmation, backup-run confirmation, and production confirmation.
+- Audit events persist actor, action, reason, and target/job/run/request references for safety-relevant operations.
+- Admin UI makes destructive restore and low-retention policy visibly distinct and harder to trigger accidentally.
 
 ## Constraints
 
-- Do not delete backup runs during implementation.
-- Do not execute production restore.
-- Do not alter `BUSINESS.md` or `GOALS.md`.
+- Do not perform a restore or delete any backup run.
 - Do not deploy, commit, or push.
-- Use additive migrations and preserve existing PostgreSQL backup behavior.
-- Preserve Goal 05 copied baseline in this worktree and do not modify the original Goal 05 worktree.
+- Do not expose secret values or raw artifact paths.
+- Do not edit `BUSINESS.md` or `GOALS.md`.
+- Preserve Goal 05 coverage model behavior and PostgreSQL-only executable job guard.
 
 ## Validation Expectations
 
+- Documentation gate passes before source edits.
 - `npm run build` passes.
-- `npm test -- --runInBand` passes or failures are recorded with cause.
+- `npm test -- --runInBand` passes.
 - `node --check web/admin/app.js` passes.
-- Manual invariant review covers BAK-INV-001, 002, 003, 004, 005, 006, 008, and 009.
-- Validation report records any blocked runtime checks.
+- Protected management endpoint remains unauthenticated `401` or `403`.
+- Secret/safety scan finds no secret values or destructive validation actions.
