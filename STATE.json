@@ -20,14 +20,15 @@
     "BAK-G8 PostgreSQL schema namespace and migrations",
     "BAK-G9 nightly PostgreSQL backup to MinIO",
     "BAK-G10 configurable cron schedule policies",
-    "BAK-G11 restore from MinIO and verify"
+    "BAK-G11 restore from MinIO and verify",
+    "BAK-G12 NotificationsModule integration"
   ],
-  "next_goal": "Add NotificationsModule integration (success/failure)",
+  "next_goal": "Add LoggingModule integration",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Approved combined schema/nightly/schedule/restore deployment completed on 2026-06-13 with image localhost:5000/backups-microservice:fc8c225f in namespace statex-apps. Rollout, health, readiness, and full smoke passed. Next implementation target is NotificationsModule integration for success/failure events."
+  "notes": "Goal 12 NotificationsModule integration implemented but not deployed. Added typed, best-effort, secret-safe success/failure notifications for backup, restore, verification, and retention events. Build, full Jest, smoke shell syntax, and diff hygiene passed. Next implementation target is LoggingModule integration."
 }

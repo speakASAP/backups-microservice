@@ -17,12 +17,18 @@ export class RetentionService {
     const result = await this.walg.deleteRetain(env, job.retention_full_count);
     if (result.exitCode === 0) {
       this.logger.log(`Retention cleanup complete for job=${job.id}`, 'RetentionService');
-      await this.notifications.send('retention.cleanup', `Retention cleanup done for job "${job.name}"`, {
+      await this.notifications.retentionCleanupSucceeded(job.name, {
         job_id: job.id,
         retain_count: job.retention_full_count,
       });
     } else {
+      const error = result.output.slice(-500);
       this.logger.warn(`Retention cleanup failed for job=${job.id}: ${result.output}`, 'RetentionService');
+      await this.notifications.retentionCleanupFailed(job.name, {
+        job_id: job.id,
+        retain_count: job.retention_full_count,
+        error,
+      });
     }
   }
 }

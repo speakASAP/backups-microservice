@@ -94,10 +94,12 @@ export class BackupService implements OnModuleInit {
       await this.jobsService.updateLastRunAt(jobId);
 
       const durationSec = Math.round((run.completed_at.getTime() - run.started_at.getTime()) / 1000);
-      await this.notifications.send('backup.success', `Backup successful: ${job.name}`, {
-        job_id: job.id, run_id: run.id, duration_sec: durationSec,
+      await this.notifications.backupSucceeded(job.name, {
+        job_id: job.id,
+        run_id: run.id,
+        duration_sec: durationSec,
       });
-      await this.notifications.send('backup.verification.pending', `Restore verification pending: ${job.name}`, {
+      await this.notifications.verificationPending(job.name, {
         job_id: job.id,
         run_id: run.id,
         verification_status: run.verification_status,
@@ -111,8 +113,10 @@ export class BackupService implements OnModuleInit {
       this.markVerificationSkipped(run, 'Backup failed before restore verification could run.');
       await this.runRepo.save(run);
 
-      await this.notifications.send('backup.failure', `Backup FAILED: ${job.name}`, {
-        job_id: job.id, run_id: run.id, error: run.error_message,
+      await this.notifications.backupFailed(job.name, {
+        job_id: job.id,
+        run_id: run.id,
+        error: run.error_message,
       });
       this.logger.error(`Backup failed job=${job.id} run=${run.id}`, output, 'BackupService');
     }
