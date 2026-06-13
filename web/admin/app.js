@@ -109,6 +109,10 @@ function cronLabel(value) {
   return labels[value] || value || '-';
 }
 
+function currentActorLabel() {
+  return 'admin-session';
+}
+
 function sourceLabel(value) {
   const labels = {
     postgres_database: 'PostgreSQL database',
@@ -240,6 +244,7 @@ function renderDashboard() {
   renderSettings(summary.storage || {}, summary.guardrails || {});
   renderDiscovery(store.discovery || {});
   renderDestinations(summary.storage || {});
+  renderSourceContracts(summary.source_contracts || []);
   renderRunsTable($('runs-table'), summary.recent_runs || []);
 }
 
@@ -405,6 +410,23 @@ function renderDestinations(storage) {
   populateDestinationSelect($('target-destination'));
 }
 
+function renderSourceContracts(contracts) {
+  const list = $('source-contracts-list');
+  if (!list) return;
+  list.innerHTML = contracts.length
+    ? contracts.map((contract) => `<article class="destination-card">
+      <div>
+        <h3>${escapeHtml(sourceLabel(contract.source_category))}</h3>
+        <div class="meta-line">
+          <span>${escapeHtml(sourceLabel(contract.restore_class))}</span>
+          <span>${escapeHtml(contract.credential_policy || '-')}</span>
+        </div>
+      </div>
+      ${statusBadge(contract.execution_status === 'implemented' ? 'enabled' : 'contract only')}
+    </article>`).join('')
+    : '<div class="muted">No source contracts are published by the API.</div>';
+}
+
 function populateDestinationSelect(select) {
   if (!select) return;
   if (store.destinations.length) {
@@ -506,8 +528,10 @@ function renderEmptyStates(message = 'Waiting for authorized data.') {
 async function createJob(event) {
   event.preventDefault();
   const retention = Number($('job-retention').value || 7);
-  if (retention < 3) {
-    showNotice('Retention below three full backups requires explicit owner approval and is blocked in this UI.', 'error');
+  const approvalActor = $('job-retention-approval-actor')?.value.trim();
+  const approvalReason = $('job-retention-approval-reason')?.value.trim();
+  if (retention < 3 && (!approvalActor || !approvalReason || approvalReason.length < 12)) {
+    showNotice('Retention below three full backups requires owner approval actor and reason.', 'error');
     return;
   }
   const body = {
@@ -515,6 +539,8 @@ async function createJob(event) {
     target_id: $('job-target').value,
     schedule_cron: $('job-cron').value.trim(),
     retention_full_count: retention,
+    retention_approval_actor: retention < 3 ? approvalActor : undefined,
+    retention_approval_reason: retention < 3 ? approvalReason : undefined,
     storage_prefix: $('job-prefix').value.trim() || undefined,
   };
   await api('/jobs', { method: 'POST', body: JSON.stringify(body) });
@@ -529,26 +555,32 @@ async function createJob(event) {
 async function createTarget(event) {
   event.preventDefault();
   const retention = Number($('target-retention').value || 7);
-  if (retention < 3) {
-    showNotice('Retention below three full backups requires explicit owner approval and is blocked in this UI.', 'error');
+  const approvalActor = $('target-retention-approval-actor')?.value.trim();
+  const approvalReason = $('target-retention-approval-reason')?.value.trim();
+  if (retention < 3 && (!approvalActor || !approvalReason || approvalReason.length < 12)) {
+    showNotice('Retention below three full backups requires owner approval actor and reason.', 'error');
     return;
   }
   const targetBody = {
-    name: $('target-name').value.trim(),
-    host: $('target-host').value.trim(),
-    port: Number($('target-port').value || 5432),
-    database_name: $('target-database').value.trim(),
-    vault_secret_ref: $('target-secret').value.trim() || undefined,
-    service_owner: $('target-owner').value.trim() || undefined,
     source_category: $('target-source-category').value,
     criticality: $('target-criticality').value,
     rpo_minutes: Number($('target-rpo').value || 0) || undefined,
     rto_minutes: Number($('target-rto').value || 0) || undefined,
     restore_class: $('target-restore-class').value,
     kubernetes_namespace: $('target-namespace').value.trim() || undefined,
+    name: $('target-name').value.trim(),
+    host: $('target-host').value.trim(),
+    port: Number($('target-port').value || 5432),
+    database_name: $('target-database').value.trim(),
+    vault_secret_ref: $('target-secret').value.trim() || undefined,
+    service_owner: $('target-owner').value.trim() || undefined,
     coverage_notes: $('target-notes').value.trim() || undefined,
     enabled: true,
   };
+  if (targetBody.source_category !== 'postgres_database') {
+    showNotice('This source category is contract-only in Goal 05. Create executable schedules only for PostgreSQL database targets.', 'error');
+    return;
+  }
   const createdTarget = await api('/targets', { method: 'POST', body: JSON.stringify(targetBody) });
   const destination = $('target-destination').value || store.summary?.storage?.prefix || createdTarget.database_name;
   await api('/jobs', {
@@ -558,6 +590,8 @@ async function createTarget(event) {
       name: `${createdTarget.name} daily backup`,
       schedule_cron: $('target-cron').value,
       retention_full_count: retention,
+      retention_approval_actor: retention < 3 ? approvalActor : undefined,
+      retention_approval_reason: retention < 3 ? approvalReason : undefined,
       storage_prefix: `${destination.replace(/\/$/, '')}/${createdTarget.database_name}`,
       enabled: true,
     }),
@@ -592,17 +626,39 @@ async function createDestination(event) {
 
 async function submitRestore(event) {
   event.preventDefault();
+  const runId = $('restore-run').value.trim();
+  const targetId = $('restore-target').value;
+  const confirmedRun = $('restore-confirm-run').value.trim();
+  const confirmedTarget = $('restore-confirm-target').value.trim();
+  const approvalActor = $('restore-approval-actor').value.trim();
+  const approvalReason = $('restore-approval-reason').value.trim();
   if (!$('restore-confirm').checked) {
-    showNotice('Human approval confirmation is required before submitting a restore request.', 'error');
+    showNotice('Production restore approval confirmation is required before submitting a restore request.', 'error');
+    return;
+  }
+  if (confirmedRun !== runId || confirmedTarget !== targetId) {
+    showNotice('Restore confirmation must repeat the exact backup run ID and target ID.', 'error');
+    return;
+  }
+  if (!approvalActor || approvalReason.length < 12) {
+    showNotice('Restore approval actor and reason are required.', 'error');
     return;
   }
   const body = {
-    backup_run_id: $('restore-run').value,
-    target_id: $('restore-target').value,
+    backup_run_id: runId,
+    target_id: targetId,
+    approval_confirmed_backup_run_id: confirmedRun,
+    approval_confirmed_target_id: confirmedTarget,
+    approval_actor: approvalActor,
+    approval_reason: approvalReason,
+    production_restore_approved: true,
   };
   await api('/restore', { method: 'POST', body: JSON.stringify(body) });
   $('restore-form-panel').classList.add('hidden');
   $('restore-confirm').checked = false;
+  $('restore-confirm-run').value = '';
+  $('restore-confirm-target').value = '';
+  $('restore-approval-reason').value = '';
   showNotice('Restore request submitted.');
   await loadPage();
 }
@@ -630,6 +686,10 @@ document.addEventListener('click', async (event) => {
     }
     if (target.dataset.restoreRun) {
       $('restore-run').value = target.dataset.restoreRun;
+      $('restore-confirm-run').value = '';
+      $('restore-confirm-target').value = '';
+      $('restore-approval-actor').value = currentActorLabel();
+      $('restore-approval-reason').value = '';
       $('restore-form-panel').classList.remove('hidden');
       $('restore-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }

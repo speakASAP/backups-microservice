@@ -94,6 +94,7 @@ export class DashboardService {
       destinations,
       coverage_stats: this.coverageStats(targets, protectedTargets, unprotectedDiscoveredSources),
       unprotected_discovered_sources: unprotectedDiscoveredSources,
+      source_contracts: this.sourceContracts(),
       coverage: targets.map((target) => {
         const targetJobs = jobsByTarget.get(target.id) || [];
         const targetRuns = recentRuns.filter((run) => targetJobs.some((job) => job.id === run.job_id));
@@ -144,6 +145,16 @@ export class DashboardService {
       byCategory.set(category, existing);
     }
     return Array.from(byCategory.entries()).map(([source_category, counts]) => ({ source_category, ...counts }));
+  }
+
+  private sourceContracts() {
+    return [
+      { source_category: 'postgres_database', restore_class: 'logical_postgres', execution_status: 'implemented', credential_policy: 'Vault or Kubernetes secret reference only' },
+      { source_category: 'minio_bucket', restore_class: 'object_restore', execution_status: 'contract_only', credential_policy: 'No object-store credentials in Backups source, UI, or reports' },
+      { source_category: 'kubernetes_resource', restore_class: 'manifest_reapply', execution_status: 'contract_only', credential_policy: 'Manifest metadata only; secret values remain owned by Vault/ESO' },
+      { source_category: 'secret_reference', restore_class: 'secret_rehydration', execution_status: 'contract_only', credential_policy: 'References only; no secret values, private keys, or tokens' },
+      { source_category: 'pvc', restore_class: 'volume_restore', execution_status: 'contract_only', credential_policy: 'Volume metadata and runbook references only' },
+    ];
   }
 
   private unprotectedDiscoveredSources(discovery: any, targets: BackupTarget[]) {

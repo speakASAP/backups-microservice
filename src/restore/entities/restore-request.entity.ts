@@ -16,6 +16,12 @@ export class RestoreRequest {
   @ManyToOne(() => BackupTarget) @JoinColumn({ name: 'target_id' }) target: BackupTarget;
   @Column({ type: 'varchar', length: 20, default: 'pending' }) status: RestoreStatus;
   @Column({ type: 'varchar', length: 255, nullable: true }) requested_by: string;
+  @Column({ type: 'varchar', length: 255, nullable: true }) approval_actor: string;
+  @Column({ type: 'text', nullable: true }) approval_reason: string;
+  @Column({ type: 'uuid', nullable: true }) approval_confirmed_target_id: string;
+  @Column({ type: 'uuid', nullable: true }) approval_confirmed_backup_run_id: string;
+  @Column({ type: 'boolean', default: false }) production_restore_approved: boolean;
+  @Column({ type: 'timestamptz', nullable: true }) approved_at: Date;
   @Column({ type: 'timestamptz', nullable: true }) started_at: Date;
   @Column({ type: 'timestamptz', nullable: true }) completed_at: Date;
   @Column({ type: 'text', nullable: true }) error_message: string;

@@ -4,8 +4,7 @@
 *.bck
 *.bck.*
 *.bak
-*backup*
-*bck*
+*.bak.*
 
 # Dependencies
 node_modules/
@@ -95,7 +94,8 @@ venv.bak/
 local_config.py
 local_settings.py
 # Backup files
-*.backup*
+*.backup
+*.backup.*
 *.old
 # Compressed files
 *.zip

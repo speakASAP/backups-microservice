@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, MethodNotAllowedException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SchedulerRegistry, CronExpression } from '@nestjs/schedule';
@@ -16,6 +16,8 @@ import { JobsService } from '../jobs/jobs.service';
 import { WalgWrapperService } from './walg-wrapper.service';
 import { RetentionService } from '../retention/retention.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/entities/audit-event.entity';
 import { LoggerService } from '../../shared/logger/logger.service';
 
 @Injectable()
@@ -27,6 +29,7 @@ export class BackupService implements OnModuleInit {
     private walg: WalgWrapperService,
     private retention: RetentionService,
     private notifications: NotificationsService,
+    private audit: AuditService,
     private logger: LoggerService,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
@@ -135,9 +138,19 @@ export class BackupService implements OnModuleInit {
     return run;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actor = 'unknown', reason?: string): Promise<void> {
     const run = await this.findOne(id);
-    await this.runRepo.remove(run);
+    const auditReason = reason?.trim() || 'Backup run deletion denied because backup-run deletion is disabled.';
+    await this.audit.record({
+      action: AuditAction.BACKUP_RUN_DELETE_DENIED,
+      actor: actor || 'unknown',
+      target_id: run.job?.target_id,
+      job_id: run.job_id,
+      backup_run_id: run.id,
+      reason: auditReason,
+      metadata: { status: run.status },
+    });
+    throw new MethodNotAllowedException('Backup run deletion is disabled. Preserve backup evidence or request owner-approved retention policy changes instead.');
   }
 
   private markVerificationPending(run: BackupRun, reason: string) {

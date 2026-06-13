@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as express from 'express';
 import * as path from 'path';
 import { AppModule } from './app.module';
+import { SchemaReadinessService } from './schema/schema-readiness.service';
 
 const ADMIN_COOKIE = 'backups_admin_token';
 const ADMIN_ROLES = ['global:superadmin', 'internal:backups-microservice:admin'];
@@ -49,6 +50,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   const jwtService = app.get(JwtService);
+  await app.get(SchemaReadinessService).apply();
 
   const webPath = path.join(process.cwd(), 'web');
   app.use(express.json({ limit: '32kb' }));

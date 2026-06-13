@@ -161,9 +161,15 @@
               </select>
             </label>
             <label>Retention
-              <input id="target-retention" type="number" min="3" value="7">
+              <input id="target-retention" type="number" min="1" value="7">
             </label>
           </div>
+          <label>Retention approval actor
+            <input id="target-retention-approval-actor" placeholder="owner@example.com">
+          </label>
+          <label>Retention approval reason
+            <textarea id="target-retention-approval-reason" rows="2" placeholder="Required only when retention is below three full backups"></textarea>
+          </label>
           <div class="form-actions">
             <button class="button primary" type="submit">Add target and schedule</button>
           </div>
@@ -221,6 +227,16 @@
         </div>
       </div>
         <dl id="settings-list" class="settings-list"></dl>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Source contracts</h2>
+          <p>Only PostgreSQL database backups are executable now. Other source classes are coverage contracts.</p>
+        </div>
+      </div>
+      <div id="source-contracts-list" class="destination-list"></div>
     </section>
 
     <section class="panel">

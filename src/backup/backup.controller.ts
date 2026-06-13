@@ -1,6 +1,10 @@
-import { Controller, Get, Post, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, Request } from '@nestjs/common';
 import { BackupService } from './backup.service';
 import { TriggerBackupDto } from './dto/trigger-backup.dto';
+
+interface DeleteBackupRunDto {
+  reason?: string;
+}
 
 @Controller('backups')
 export class BackupController {
@@ -27,5 +31,8 @@ export class BackupController {
     return this.service.triggerManual(dto.job_id).then((run) => this.service.toPublicRun(run));
   }
 
-  @Delete(':id') remove(@Param('id') id: string) { return this.service.remove(id); }
+  @Delete(':id')
+  remove(@Param('id') id: string, @Body() dto: DeleteBackupRunDto, @Request() req: any) {
+    return this.service.remove(id, req.user?.sub || req.user?.email, dto?.reason);
+  }
 }
