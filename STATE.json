@@ -19,14 +19,15 @@
     "BAK-G7 production readiness and smoke tests",
     "BAK-G8 PostgreSQL schema namespace and migrations",
     "BAK-G9 nightly PostgreSQL backup to MinIO",
-    "BAK-G10 configurable cron schedule policies"
+    "BAK-G10 configurable cron schedule policies",
+    "BAK-G11 restore from MinIO and verify"
   ],
-  "next_goal": "Owner review/deploy for schedule policy branches or RestoresModule restore from MinIO plus verify",
+  "next_goal": "Deploy approved combined schema/nightly/schedule/restore branch, then NotificationsModule integration",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 10 implemented but not deployed: jobs now support hourly/daily/weekly/custom_cron policies normalized into schedule_cron, with DTO validation, schema readiness fields, nightly bootstrap compatibility, and focused tests. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment deferred for owner approval because this changes production job schedule configuration semantics."
+  "notes": "Goal 11 implemented but not yet deployed: restore execution now guards successful backup runs, uses isolated working directories, extracts WAL-G backup names when available, and updates backup-run verification evidence based on restore outcome. Build, full Jest, smoke shell syntax, and diff hygiene passed. No restore was executed during validation."
 }

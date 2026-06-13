@@ -24,8 +24,8 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 
 - Active goal: none
 - Active branch: `codex/backups-goal-05-coverage-model`
-- Current wave: Wave 7 - Configurable schedule policies implemented; deployment deferred for owner approval
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies
+- Current wave: Wave 8 - Restore from MinIO and verification hardening implemented; combined deployment pending
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -54,6 +54,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 | 08 | `implementation-goals/GOAL-08-postgres-schema-migrations.md` | implemented-not-deployed | `codex/backups-postgres-schema-migrations` | 07 | Schema namespace move requires owner-approved deployment |
 | 09 | `implementation-goals/GOAL-09-nightly-pgbackup-minio.md` | implemented-not-deployed | `codex/backups-nightly-pgbackup` | 08 | Enables default nightly scheduler metadata; deploy requires owner approval |
 | 10 | `implementation-goals/GOAL-10-configurable-schedules.md` | implemented-not-deployed | `codex/backups-schedule-policies` | 09 | Schedule policy schema/config semantics; deploy requires owner approval |
+| 11 | `implementation-goals/GOAL-11-restore-from-minio-verify.md` | implemented-not-deployed | `codex/backups-restore-minio-verify` | 10 | Restore execution hardening; deploy approved after implementation |
 
 ## Execution Waves
 
@@ -101,6 +102,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Implemented BAK-G11 restore from MinIO and verify on `codex/backups-restore-minio-verify`. Added isolated restore working directory and WAL-G backup-name helpers, rejected restore execution for non-success backup runs, updated backup-run verification status to verifying/verified/failed around restore execution, and persisted verification evidence through an injected BackupRun repository. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 8 suites and 27 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No restore was executed, no backup deletion was performed, and raw WAL-G output remains omitted from public restore responses.
 2026-06-13: Implemented BAK-G10 configurable cron schedule policies on `codex/backups-schedule-policies`. Added schedule policy normalization for hourly, daily, weekly, and custom cron schedules; added policy fields to job entity/DTOs/schema readiness/initial migration; normalized job create/update schedules into `schedule_cron`; kept existing cron execution path; and updated nightly bootstrap to store its configured cron as `custom_cron`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 7 suites and 24 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no secret values were exposed. Deployment deferred for owner approval because this changes job schedule configuration semantics.
 2026-06-13: Implemented BAK-G9 nightly PostgreSQL backup to MinIO on `codex/backups-nightly-pgbackup`. Added `NightlyBackupBootstrapService` to create/update a default PostgreSQL target and enabled nightly backup job from env before cron registration; kept WAL-G `pgbackup --full-backup` as the execution path; added config defaults and focused tests. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 6 suites and 20 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no secret values were exposed. Deployment deferred for owner approval because it enables automatic nightly scheduling.
 2026-06-13: Implemented BAK-G8 PostgreSQL schema namespace and migrations on `codex/backups-postgres-schema-migrations`. Added validated database schema helper, configured TypeORM app/data-source with `DB_SCHEMA` defaulting to `backups`, added `DB_SCHEMA: backups` to Kubernetes config, made startup schema readiness create the schema and move legacy `public` Backups tables into it idempotently, added migration run/show scripts, and updated initial migration to create the configured schema. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 5 suites and 17 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No destructive schema operation, backup deletion, or restore was performed. Deployment deferred for owner approval because this moves production table namespace.
@@ -138,4 +140,4 @@ Next command:
 
 Commit/review request or operational handoff.
 
-Goal 10 configurable schedule policies are ready for review. Next action is owner approval for deployment, or continue with RestoresModule restore from MinIO plus verify.
+Goal 11 restore hardening is ready for the approved combined deployment. Next action is deploy schema/nightly/schedule/restore branch, then continue with NotificationsModule integration.

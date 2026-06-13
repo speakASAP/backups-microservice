@@ -4,12 +4,14 @@ import { Repository } from 'typeorm';
 import { RestoreRequest, RestoreStatus } from './entities/restore-request.entity';
 import { CreateRestoreDto } from './dto/create-restore.dto';
 import { BackupService } from '../backup/backup.service';
+import { BackupRun, VerificationStatus } from '../backup/entities/backup-run.entity';
 import { TargetsService } from '../targets/targets.service';
 import { WalgWrapperService } from '../backup/walg-wrapper.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-event.entity';
 import { LoggerService } from '../../shared/logger/logger.service';
+import { assertRestorableRun, restoreWorkingDirectory, walGBackupName } from './restore-execution';
 
 function clean(value?: string | null): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -19,6 +21,7 @@ function clean(value?: string | null): string {
 export class RestoreService {
   constructor(
     @InjectRepository(RestoreRequest) private repo: Repository<RestoreRequest>,
+    @InjectRepository(BackupRun) private backupRunRepo: Repository<BackupRun>,
     private backupService: BackupService,
     private targetsService: TargetsService,
     private walg: WalgWrapperService,
@@ -92,7 +95,13 @@ export class RestoreService {
   private async executeRestore(requestId: string): Promise<void> {
     const request = await this.findOne(requestId);
     const backupRun = await this.backupService.findOne(request.backup_run_id);
+    assertRestorableRun(backupRun);
     const target = await this.targetsService.findOne(request.target_id);
+
+    backupRun.verification_status = VerificationStatus.VERIFYING;
+    backupRun.verification_checked_at = new Date();
+    backupRun.verification_reason = `Approved restore request ${request.id} is running.`;
+    await this.backupRunRepo.save(backupRun);
 
     request.status = RestoreStatus.RUNNING;
     request.started_at = new Date();
@@ -106,7 +115,7 @@ export class RestoreService {
 
     let output = '';
     const result = await this.walg.run(
-      ['pgbackup-fetch', '/tmp/restore', 'LATEST'],
+      ['pgbackup-fetch', restoreWorkingDirectory(request.id), walGBackupName(backupRun)],
       env,
       (chunk) => { output += chunk; },
     );
@@ -116,6 +125,11 @@ export class RestoreService {
 
     if (result.exitCode === 0) {
       request.status = RestoreStatus.COMPLETED;
+      backupRun.verification_status = VerificationStatus.VERIFIED;
+      backupRun.verification_checked_at = new Date();
+      backupRun.verification_reason = `Restore request ${request.id} completed successfully.`;
+      backupRun.verification_error = null;
+      await this.backupRunRepo.save(backupRun);
       await this.repo.save(request);
       await this.audit.record({
         action: AuditAction.RESTORE_EXECUTION_COMPLETED,
@@ -131,6 +145,11 @@ export class RestoreService {
     } else {
       request.status = RestoreStatus.FAILED;
       request.error_message = output.slice(-500);
+      backupRun.verification_status = VerificationStatus.FAILED;
+      backupRun.verification_checked_at = new Date();
+      backupRun.verification_reason = `Restore request ${request.id} failed.`;
+      backupRun.verification_error = request.error_message;
+      await this.backupRunRepo.save(backupRun);
       await this.repo.save(request);
       await this.audit.record({
         action: AuditAction.RESTORE_EXECUTION_FAILED,
