@@ -18,14 +18,15 @@
     "BAK-G6 safety audit controls",
     "BAK-G7 production readiness and smoke tests",
     "BAK-G8 PostgreSQL schema namespace and migrations",
-    "BAK-G9 nightly PostgreSQL backup to MinIO"
+    "BAK-G9 nightly PostgreSQL backup to MinIO",
+    "BAK-G10 configurable cron schedule policies"
   ],
-  "next_goal": "Owner review/deploy for nightly backup bootstrap or SchedulesModule configurable cron policies",
+  "next_goal": "Owner review/deploy for schedule policy branches or RestoresModule restore from MinIO plus verify",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 09 implemented but not deployed: default nightly PostgreSQL backup target/job bootstrap creates scheduler metadata from env, keeps WAL-G pgbackup as execution path, and does not trigger backups on startup. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment is deferred for owner approval because it enables automatic nightly backup scheduling."
+  "notes": "Goal 10 implemented but not deployed: jobs now support hourly/daily/weekly/custom_cron policies normalized into schedule_cron, with DTO validation, schema readiness fields, nightly bootstrap compatibility, and focused tests. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment deferred for owner approval because this changes production job schedule configuration semantics."
 }

@@ -24,8 +24,8 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 
 - Active goal: none
 - Active branch: `codex/backups-goal-05-coverage-model`
-- Current wave: Wave 6 - Nightly PostgreSQL backup bootstrap implemented; deployment deferred for owner approval
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO
+- Current wave: Wave 7 - Configurable schedule policies implemented; deployment deferred for owner approval
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -53,6 +53,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 | 07 | `implementation-goals/GOAL-07-production-readiness.md` | done | `codex/backups-goal-05-coverage-model` | 04, 05, 06 | Completed with recorded branch deviation because Goal 05/06 changes were uncommitted |
 | 08 | `implementation-goals/GOAL-08-postgres-schema-migrations.md` | implemented-not-deployed | `codex/backups-postgres-schema-migrations` | 07 | Schema namespace move requires owner-approved deployment |
 | 09 | `implementation-goals/GOAL-09-nightly-pgbackup-minio.md` | implemented-not-deployed | `codex/backups-nightly-pgbackup` | 08 | Enables default nightly scheduler metadata; deploy requires owner approval |
+| 10 | `implementation-goals/GOAL-10-configurable-schedules.md` | implemented-not-deployed | `codex/backups-schedule-policies` | 09 | Schedule policy schema/config semantics; deploy requires owner approval |
 
 ## Execution Waves
 
@@ -100,6 +101,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Implemented BAK-G10 configurable cron schedule policies on `codex/backups-schedule-policies`. Added schedule policy normalization for hourly, daily, weekly, and custom cron schedules; added policy fields to job entity/DTOs/schema readiness/initial migration; normalized job create/update schedules into `schedule_cron`; kept existing cron execution path; and updated nightly bootstrap to store its configured cron as `custom_cron`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 7 suites and 24 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no secret values were exposed. Deployment deferred for owner approval because this changes job schedule configuration semantics.
 2026-06-13: Implemented BAK-G9 nightly PostgreSQL backup to MinIO on `codex/backups-nightly-pgbackup`. Added `NightlyBackupBootstrapService` to create/update a default PostgreSQL target and enabled nightly backup job from env before cron registration; kept WAL-G `pgbackup --full-backup` as the execution path; added config defaults and focused tests. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 6 suites and 20 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no secret values were exposed. Deployment deferred for owner approval because it enables automatic nightly scheduling.
 2026-06-13: Implemented BAK-G8 PostgreSQL schema namespace and migrations on `codex/backups-postgres-schema-migrations`. Added validated database schema helper, configured TypeORM app/data-source with `DB_SCHEMA` defaulting to `backups`, added `DB_SCHEMA: backups` to Kubernetes config, made startup schema readiness create the schema and move legacy `public` Backups tables into it idempotently, added migration run/show scripts, and updated initial migration to create the configured schema. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 5 suites and 17 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No destructive schema operation, backup deletion, or restore was performed. Deployment deferred for owner approval because this moves production table namespace.
 2026-06-13: Implemented nearest follow-up hardening after BAK-G7: added startup `SchemaReadinessService` and module, invoked it before `app.listen`, and covered it with focused Jest tests. The service applies only additive idempotent schema alignment for Goal 4/5/6 fields/tables and can be disabled with `BACKUPS_APPLY_SCHEMA_READINESS=false`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 5 suites and 15 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed; deployed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613064342`; rollout, health, readiness, and full authenticated smoke passed. Pod logs confirmed schema readiness completed before service listen. No destructive backup deletion or restore was performed. No commit or push was performed.
@@ -136,4 +138,4 @@ Next command:
 
 Commit/review request or operational handoff.
 
-Goal 09 nightly backup bootstrap is ready for review. Next action is owner approval for deployment, or continue with SchedulesModule configurable cron policies.
+Goal 10 configurable schedule policies are ready for review. Next action is owner approval for deployment, or continue with RestoresModule restore from MinIO plus verify.
