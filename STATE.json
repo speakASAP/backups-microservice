@@ -17,14 +17,15 @@
     "BAK-G5 coverage model",
     "BAK-G6 safety audit controls",
     "BAK-G7 production readiness and smoke tests",
-    "BAK-G8 PostgreSQL schema namespace and migrations"
+    "BAK-G8 PostgreSQL schema namespace and migrations",
+    "BAK-G9 nightly PostgreSQL backup to MinIO"
   ],
-  "next_goal": "Owner review for PostgreSQL schema namespace deployment or BackupsModule pg_dump to MinIO nightly",
+  "next_goal": "Owner review/deploy for nightly backup bootstrap or SchedulesModule configurable cron policies",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 08 implemented but not deployed: DB_SCHEMA defaults to backups, TypeORM app/data-source are schema-aware, startup readiness creates/moves legacy public Backups tables into the configured schema idempotently, migration scripts were added, and tests validate additive-only SQL. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment is deferred for owner approval because table namespace movement is operationally significant."
+  "notes": "Goal 09 implemented but not deployed: default nightly PostgreSQL backup target/job bootstrap creates scheduler metadata from env, keeps WAL-G pgbackup as execution path, and does not trigger backups on startup. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment is deferred for owner approval because it enables automatic nightly backup scheduling."
 }

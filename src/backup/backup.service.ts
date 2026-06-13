@@ -19,6 +19,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-event.entity';
 import { LoggerService } from '../../shared/logger/logger.service';
+import { NightlyBackupBootstrapService } from './nightly-backup-bootstrap.service';
 
 @Injectable()
 export class BackupService implements OnModuleInit {
@@ -32,9 +33,11 @@ export class BackupService implements OnModuleInit {
     private audit: AuditService,
     private logger: LoggerService,
     private schedulerRegistry: SchedulerRegistry,
+    private nightlyBootstrap: NightlyBackupBootstrapService,
   ) {}
 
   async onModuleInit() {
+    await this.nightlyBootstrap.ensureDefaultNightlyJob();
     const jobs = await this.jobsService.findEnabled();
     for (const job of jobs) {
       this.registerCron(job);

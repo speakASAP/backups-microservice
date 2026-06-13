@@ -24,13 +24,14 @@ To print the current resume checkpoint from the shell:
 6. `GOAL-06-safety-audit-controls.md` - retention, backup-run deletion, restore approval, and audit hardening.
 7. `GOAL-07-production-readiness.md` - smoke tests, readiness checks, deploy evidence, and operational runbook.
 8. `GOAL-08-postgres-schema-migrations.md` - PostgreSQL schema namespace and migration tooling.
+9. `GOAL-09-nightly-pgbackup-minio.md` - default nightly PostgreSQL logical backup job to MinIO.
 
 ## Parallelization
 
 Safe default:
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08
+01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09
 ```
 
 Goal 05 exploration can begin while Goal 04 implementation is active only if it is documentation-only and does not alter shared entities, migrations, DTOs, or UI contracts. Goal 06 depends on the restore verification model from Goal 04.
