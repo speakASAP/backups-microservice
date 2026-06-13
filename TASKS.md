@@ -9,7 +9,7 @@
 - [x] Frontend dashboard (backup history, health, alerts)
 - [x] Create PostgreSQL schema `backups` with migrations
 - [x] Implement BackupsModule: pg_dump to MinIO nightly
-- [ ] Implement SchedulesModule: configurable cron policies
+- [x] Implement SchedulesModule: configurable cron policies
 - [ ] Implement RestoresModule: restore from MinIO + verify
 - [ ] Add NotificationsModule integration (success/failure)
 - [ ] Add LoggingModule integration
@@ -29,3 +29,5 @@
 - [ ] Deploy PostgreSQL schema namespace move after owner approval
 
 - [ ] Deploy default nightly PostgreSQL backup bootstrap after owner approval
+
+- [ ] Deploy configurable schedule policies after owner approval

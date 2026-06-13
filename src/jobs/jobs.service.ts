@@ -7,6 +7,7 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { BackupTarget, SourceCategory } from '../targets/entities/backup-target.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-event.entity';
+import { resolveSchedulePolicy } from './schedule-policy';
 
 const MIN_SAFE_FULL_BACKUPS = 3;
 
@@ -53,9 +54,11 @@ export class JobsService {
 
     const retentionFullCount = dto.retention_full_count ?? 7;
     requireLowRetentionApproval(retentionFullCount, dto.retention_approval_actor, dto.retention_approval_reason);
+    const schedule = resolveSchedulePolicy(dto);
 
     const job = this.repo.create({
       ...dto,
+      ...schedule,
       retention_full_count: retentionFullCount,
       retention_approval_actor: retentionFullCount < MIN_SAFE_FULL_BACKUPS ? normalized(dto.retention_approval_actor) : null,
       retention_approval_reason: retentionFullCount < MIN_SAFE_FULL_BACKUPS ? normalized(dto.retention_approval_reason) : null,
@@ -87,7 +90,16 @@ export class JobsService {
     requireLowRetentionApproval(nextRetention, approvalActor, approvalReason);
 
     const previousRetention = job.retention_full_count;
-    Object.assign(job, dto);
+    const previousSchedule = {
+      schedule_cron: job.schedule_cron,
+      schedule_policy: job.schedule_policy,
+      schedule_hour_utc: job.schedule_hour_utc,
+      schedule_minute_utc: job.schedule_minute_utc,
+      schedule_day_of_week: job.schedule_day_of_week,
+    };
+    const scheduleInput = { ...previousSchedule, ...dto };
+    const schedule = resolveSchedulePolicy(scheduleInput);
+    Object.assign(job, dto, schedule);
     if (nextRetention < MIN_SAFE_FULL_BACKUPS) {
       job.retention_approval_actor = approvalActor;
       job.retention_approval_reason = approvalReason;

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BackupJob } from '../jobs/entities/backup-job.entity';
+import { resolveSchedulePolicy, SchedulePolicyType } from '../jobs/schedule-policy';
 import {
   BackupTarget,
   RestoreClass,
@@ -112,7 +113,12 @@ export class NightlyBackupBootstrapService {
     const job = existing || this.jobRepo.create({ target_id: target.id, name: config.jobName });
     job.target_id = target.id;
     job.name = config.jobName;
-    job.schedule_cron = config.scheduleCron;
+    const schedule = resolveSchedulePolicy({ schedule_policy: SchedulePolicyType.CUSTOM_CRON, schedule_cron: config.scheduleCron });
+    job.schedule_policy = schedule.schedule_policy;
+    job.schedule_cron = schedule.schedule_cron;
+    job.schedule_hour_utc = schedule.schedule_hour_utc;
+    job.schedule_minute_utc = schedule.schedule_minute_utc;
+    job.schedule_day_of_week = schedule.schedule_day_of_week;
     job.retention_full_count = Math.max(config.retentionFullCount, DEFAULT_RETENTION_FULL_COUNT);
     job.storage_prefix = config.storagePrefix;
     job.enabled = true;
