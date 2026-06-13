@@ -6,6 +6,9 @@
 *.bak
 *backup*
 *bck*
+!docs/orchestrator/backup-intent-plan.md
+!src/backup/
+!src/backup/**
 
 # Dependencies
 node_modules/
