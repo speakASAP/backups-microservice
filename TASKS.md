@@ -10,7 +10,7 @@
 - [x] Create PostgreSQL schema `backups` with migrations
 - [x] Implement BackupsModule: pg_dump to MinIO nightly
 - [x] Implement SchedulesModule: configurable cron policies
-- [ ] Implement RestoresModule: restore from MinIO + verify
+- [x] Implement RestoresModule: restore from MinIO + verify
 - [ ] Add NotificationsModule integration (success/failure)
 - [ ] Add LoggingModule integration
 - [x] Implement restore verification state and evidence
@@ -31,3 +31,5 @@
 - [ ] Deploy default nightly PostgreSQL backup bootstrap after owner approval
 
 - [ ] Deploy configurable schedule policies after owner approval
+
+- [ ] Deploy restore verification hardening after owner approval
