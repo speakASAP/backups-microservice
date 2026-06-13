@@ -24,7 +24,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 
 - Active goal: none
 - Active branch: `codex/backups-logging-integration`
-- Current wave: Wave 11 - LoggingModule integration implemented; deployment pending owner approval
+- Current wave: Wave 12 - notification/logging integration deployed; next roadmap goal pending owner selection
 - Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration
 - Running goals: none
 - Blocked goals: none
@@ -37,7 +37,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 - Project invariants: `docs/process/PROJECT_INVARIANTS.md`
 - Process gates: `docs/process/OPERATIONAL_GATES.md`
 - Branch workflow: `docs/orchestration/branch-workflow.md`
-- Deployment status: deployed after owner instruction; image `localhost:5000/backups-microservice:fc8c225f`; full smoke passed for combined schema/nightly/schedule/restore rollout
+- Deployment status: deployed after owner instruction; image `localhost:5000/backups-microservice:cb06ec77`; full smoke passed for notification/logging rollout
 - Commit policy: do not commit or push unless the owner explicitly asks
 
 ## Goal Roadmap
@@ -55,8 +55,8 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 | 09 | `implementation-goals/GOAL-09-nightly-pgbackup-minio.md` | done | `codex/backups-nightly-pgbackup` | 08 | Deployed after owner approval in combined rollout |
 | 10 | `implementation-goals/GOAL-10-configurable-schedules.md` | done | `codex/backups-schedule-policies` | 09 | Deployed after owner approval in combined rollout |
 | 11 | `implementation-goals/GOAL-11-restore-from-minio-verify.md` | done | `codex/backups-restore-minio-verify` | 10 | Deployed after owner approval in combined rollout |
-| 12 | `implementation-goals/GOAL-12-notifications-integration.md` | implemented-not-deployed | `codex/backups-notifications-integration` | 11 | Notification event changes require owner-approved deployment |
-| 13 | `implementation-goals/GOAL-13-logging-integration.md` | implemented-not-deployed | `codex/backups-logging-integration` | 12 | Logging event shape changes require owner-approved deployment |
+| 12 | `implementation-goals/GOAL-12-notifications-integration.md` | done | `codex/backups-notifications-integration` | 11 | Deployed after owner approval in notification/logging rollout |
+| 13 | `implementation-goals/GOAL-13-logging-integration.md` | done | `codex/backups-logging-integration` | 12 | Deployed after owner approval in notification/logging rollout |
 
 ## Execution Waves
 
@@ -104,6 +104,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Deployed approved notification/logging branch `codex/backups-logging-integration` at commit `cb06ec77` to `statex-apps` with image `localhost:5000/backups-microservice:cb06ec77`. Kubernetes manifests applied, deployment rolled out successfully, health and readiness checks passed, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. This deployed BAK-G12 NotificationsModule integration and BAK-G13 LoggingModule integration. No manual backup, backup deletion, or restore was performed during deployment validation.
 2026-06-13: Implemented BAK-G13 LoggingModule integration on `codex/backups-logging-integration`. Added structured `LoggerService.operation()` events with recursive redaction before local and remote logging; kept Nest logger API compatibility; added operation events for backup run, restore request, retention cleanup, backup job, and audit event lifecycle paths; and added focused logger tests. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 10 suites and 35 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
 2026-06-13: Implemented BAK-G12 NotificationsModule integration on `codex/backups-notifications-integration`. Added typed notification event constants and helper methods for backup success/failure, verification pending/verified/failed, restore completed/failed, and retention cleanup success/failure; added recursive redaction for secret-like detail keys; replaced direct backup/restore sends with typed helpers; and added retention failure notification coverage. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 9 suites and 31 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
 2026-06-13: Deployed approved combined schema/nightly/schedule/restore branch `codex/backups-restore-minio-verify` at commit `fc8c225f` to `statex-apps` with image `localhost:5000/backups-microservice:fc8c225f`. Kubernetes manifests applied, deployment rolled out successfully, health and readiness checks passed, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. This deployed BAK-G8 PostgreSQL schema namespace, BAK-G9 nightly PostgreSQL backup bootstrap, BAK-G10 configurable schedule policies, and BAK-G11 restore verification hardening. No manual backup, backup deletion, or restore was performed during deployment validation.
@@ -145,4 +146,4 @@ Next command:
 
 Commit/review request or operational handoff.
 
-LoggingModule integration is implemented and awaiting review/deployment approval. Next action is review/deploy pending notification and logging integration branches.
+Notification and logging integration deployment is complete. Next action is confirm the next roadmap goal with the owner.

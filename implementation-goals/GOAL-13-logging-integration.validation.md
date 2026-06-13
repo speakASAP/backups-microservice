@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G13
-status: passed-not-deployed
+status: passed-and-deployed
 validated_artifact: implementation-goals/GOAL-13-logging-integration.md
 owner: validator
 created: 2026-06-13
@@ -25,10 +25,14 @@ last_updated: 2026-06-13
 - `bash -n scripts/smoke-test.sh`: passed.
 - `git diff --check`: passed.
 
+## Deployment Evidence
+
+- Production deployment completed on 2026-06-13 as part of the approved notification/logging rollout. Image `localhost:5000/backups-microservice:cb06ec77` rolled out in namespace `statex-apps`; health, readiness, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. Structured logging event shape changes are live in production. Remote logging remains best-effort and redacted before transport.
+
 ## Safety Evidence
 
-No backup was triggered. No backup deletion or restore was performed. No production deployment was performed. Logging payloads avoid raw WAL-G output and redact secret-like metadata keys and inline secret-like string values.
+No backup was triggered. No backup deletion or restore was performed. Production deployment was performed after owner approval. Logging payloads avoid raw WAL-G output and redact secret-like metadata keys and inline secret-like string values.
 
 ## Recommendation
 
-Ready for review. Deploy only after owner approval because this changes production logging event shape.
+Deployed after owner approval with structured logging event shape live.
