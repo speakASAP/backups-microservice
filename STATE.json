@@ -22,12 +22,12 @@
     "BAK-G10 configurable cron schedule policies",
     "BAK-G11 restore from MinIO and verify"
   ],
-  "next_goal": "Deploy approved combined schema/nightly/schedule/restore branch, then NotificationsModule integration",
+  "next_goal": "Add NotificationsModule integration (success/failure)",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 11 implemented but not yet deployed: restore execution now guards successful backup runs, uses isolated working directories, extracts WAL-G backup names when available, and updates backup-run verification evidence based on restore outcome. Build, full Jest, smoke shell syntax, and diff hygiene passed. No restore was executed during validation."
+  "notes": "Approved combined schema/nightly/schedule/restore deployment completed on 2026-06-13 with image localhost:5000/backups-microservice:fc8c225f in namespace statex-apps. Rollout, health, readiness, and full smoke passed. Next implementation target is NotificationsModule integration for success/failure events."
 }

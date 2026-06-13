@@ -26,10 +26,10 @@
 - [x] Owner review and deployment approval
 - [x] Automate additive schema readiness before service startup
 
-- [ ] Deploy PostgreSQL schema namespace move after owner approval
+- [x] Deploy PostgreSQL schema namespace move after owner approval
 
-- [ ] Deploy default nightly PostgreSQL backup bootstrap after owner approval
+- [x] Deploy default nightly PostgreSQL backup bootstrap after owner approval
 
-- [ ] Deploy configurable schedule policies after owner approval
+- [x] Deploy configurable schedule policies after owner approval
 
-- [ ] Deploy restore verification hardening after owner approval
+- [x] Deploy restore verification hardening after owner approval

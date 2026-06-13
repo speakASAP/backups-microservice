@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G8
-status: passed-not-deployed
+status: passed-and-deployed
 validated_artifact: implementation-goals/GOAL-08-postgres-schema-migrations.md
 owner: validator
 created: 2026-06-13
@@ -25,14 +25,18 @@ last_updated: 2026-06-13
 - `bash -n scripts/smoke-test.sh`: passed.
 - `git diff --check`: passed.
 
+## Deployment Evidence
+
+- Production deployment completed on 2026-06-13 as part of the approved combined schema/nightly/schedule/restore rollout. Image `localhost:5000/backups-microservice:fc8c225f` rolled out in namespace `statex-apps`; health, readiness, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs.
+
 ## Backup Safety Evidence
 
 No destructive schema operation was introduced. SQL safety tests reject `drop`, `truncate`, and `delete`. Table migration uses `ALTER TABLE ... SET SCHEMA`, preserving data in-place.
 
 ## Deviations
 
-Production deployment is deferred because moving existing tables from `public` into `backups` is an operational schema namespace change.
+Production deployment was completed after owner approval because moving existing tables from `public` into `backups` is an operational schema namespace change.
 
 ## Recommendation
 
-Review and deploy only after owner confirms the namespace move window. Use full smoke after rollout.
+Deployed after owner approval. Continue monitoring schema-readiness and smoke evidence after subsequent rollouts.
