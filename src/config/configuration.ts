@@ -7,6 +7,7 @@ export default () => ({
     user: process.env.DB_USER || 'dbadmin',
     password: process.env.DB_PASSWORD || '',
     name: process.env.DB_NAME || 'backups',
+    schema: process.env.DB_SCHEMA || 'backups',
   },
   logging: {
     serviceUrl: process.env.LOGGING_SERVICE_URL || 'http://logging-microservice.statex-apps.svc.cluster.local:3367',

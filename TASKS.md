@@ -7,7 +7,7 @@
 - [x] Add IPS compliance docs, project invariants, and Goal 04 pre-coding artifacts
 - [x] Add dashboard summary API for backup management UI
 - [x] Frontend dashboard (backup history, health, alerts)
-- [ ] Create PostgreSQL schema `backups` with migrations
+- [x] Create PostgreSQL schema `backups` with migrations
 - [ ] Implement BackupsModule: pg_dump to MinIO nightly
 - [ ] Implement SchedulesModule: configurable cron policies
 - [ ] Implement RestoresModule: restore from MinIO + verify
@@ -25,3 +25,5 @@
 
 - [x] Owner review and deployment approval
 - [x] Automate additive schema readiness before service startup
+
+- [ ] Deploy PostgreSQL schema namespace move after owner approval

@@ -1,7 +1,11 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import { getDatabaseSchema, quoteIdentifier } from '../config/database';
 
 export class InitialSchema1748563200000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    const schema = getDatabaseSchema();
+    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(schema)}`);
+
     await queryRunner.createTable(new Table({
       name: 'backup_targets',
       columns: [

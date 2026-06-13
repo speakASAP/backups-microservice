@@ -22,6 +22,7 @@ data:
   DB_PORT: "5432"
   DB_USER: "dbadmin"
   DB_NAME: "backups"
+  DB_SCHEMA: "backups"
   WALG_S3_PREFIX: "s3://backups"
   WALG_S3_ENDPOINT: "http://minio-microservice.statex-apps.svc.cluster.local:9000"
   WALG_COMPRESSION_METHOD: "lz4"

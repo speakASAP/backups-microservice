@@ -16,14 +16,15 @@
     "BAK-G4 restore verification evidence",
     "BAK-G5 coverage model",
     "BAK-G6 safety audit controls",
-    "BAK-G7 production readiness and smoke tests"
+    "BAK-G7 production readiness and smoke tests",
+    "BAK-G8 PostgreSQL schema namespace and migrations"
   ],
-  "next_goal": "Commit/review request or operational handoff",
+  "next_goal": "Owner review for PostgreSQL schema namespace deployment or BackupsModule pg_dump to MinIO nightly",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Nearest follow-up hardening implemented and deployed: Backups now runs an idempotent startup SchemaReadinessService before listening, applying only additive Goal 4/5/6 schema alignment. Build, full Jest, diff hygiene, rollout, readiness, and full authenticated smoke passed. Production image localhost:5000/backups-microservice:aa2f4911-dirty-20260613064342 is ready 1/1. No destructive backup deletion or restore was performed. No commit or push was performed."
+  "notes": "Goal 08 implemented but not deployed: DB_SCHEMA defaults to backups, TypeORM app/data-source are schema-aware, startup readiness creates/moves legacy public Backups tables into the configured schema idempotently, migration scripts were added, and tests validate additive-only SQL. Build, full Jest, smoke shell syntax, and diff hygiene passed. Deployment is deferred for owner approval because table namespace movement is operationally significant."
 }

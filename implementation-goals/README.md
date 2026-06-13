@@ -23,13 +23,14 @@ To print the current resume checkpoint from the shell:
 5. `GOAL-05-coverage-model.md` - ecosystem coverage model for databases, object storage, Kubernetes resources, secrets, PVCs, and service ownership.
 6. `GOAL-06-safety-audit-controls.md` - retention, backup-run deletion, restore approval, and audit hardening.
 7. `GOAL-07-production-readiness.md` - smoke tests, readiness checks, deploy evidence, and operational runbook.
+8. `GOAL-08-postgres-schema-migrations.md` - PostgreSQL schema namespace and migration tooling.
 
 ## Parallelization
 
 Safe default:
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07
+01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08
 ```
 
 Goal 05 exploration can begin while Goal 04 implementation is active only if it is documentation-only and does not alter shared entities, migrations, DTOs, or UI contracts. Goal 06 depends on the restore verification model from Goal 04.

@@ -24,8 +24,8 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 
 - Active goal: none
 - Active branch: `codex/backups-goal-05-coverage-model`
-- Current wave: Wave 4 - Production readiness complete; awaiting owner review/deployment approval
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests
+- Current wave: Wave 5 - PostgreSQL schema namespace implemented; deployment deferred for owner approval
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -51,6 +51,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 | 05 | `implementation-goals/GOAL-05-coverage-model.md` | done | `codex/backups-goal-05-coverage-model` | 03 | Validated on remote filesystem |
 | 06 | `implementation-goals/GOAL-06-safety-audit-controls.md` | done | `codex/backups-goal-05-coverage-model` | 04, 05 | Completed with recorded branch deviation because Goal 05 changes were uncommitted |
 | 07 | `implementation-goals/GOAL-07-production-readiness.md` | done | `codex/backups-goal-05-coverage-model` | 04, 05, 06 | Completed with recorded branch deviation because Goal 05/06 changes were uncommitted |
+| 08 | `implementation-goals/GOAL-08-postgres-schema-migrations.md` | implemented-not-deployed | `codex/backups-postgres-schema-migrations` | 07 | Schema namespace move requires owner-approved deployment |
 
 ## Execution Waves
 
@@ -98,6 +99,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Implemented BAK-G8 PostgreSQL schema namespace and migrations on `codex/backups-postgres-schema-migrations`. Added validated database schema helper, configured TypeORM app/data-source with `DB_SCHEMA` defaulting to `backups`, added `DB_SCHEMA: backups` to Kubernetes config, made startup schema readiness create the schema and move legacy `public` Backups tables into it idempotently, added migration run/show scripts, and updated initial migration to create the configured schema. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 5 suites and 17 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No destructive schema operation, backup deletion, or restore was performed. Deployment deferred for owner approval because this moves production table namespace.
 2026-06-13: Implemented nearest follow-up hardening after BAK-G7: added startup `SchemaReadinessService` and module, invoked it before `app.listen`, and covered it with focused Jest tests. The service applies only additive idempotent schema alignment for Goal 4/5/6 fields/tables and can be disabled with `BACKUPS_APPLY_SCHEMA_READINESS=false`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 5 suites and 15 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed; deployed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613064342`; rollout, health, readiness, and full authenticated smoke passed. Pod logs confirmed schema readiness completed before service listen. No destructive backup deletion or restore was performed. No commit or push was performed.
 2026-06-13: Completed and deployed BAK-G7 production readiness on `codex/backups-goal-05-coverage-model` with recorded branch deviation. Added `/health/readiness` with separate database and storage readiness, moved Kubernetes readiness probe to `/health/readiness`, added `scripts/smoke-test.sh` for non-destructive public and authenticated protected read checks, added `npm run smoke`, and wired deploy to run readiness plus smoke checks after rollout. Generated Backups-owned `SERVICE_TOKEN` and `JWT_TOKEN` on `alfares`, patched Vault path `secret/prod/backups-microservice` without printing values, and forced ExternalSecret reconciliation. Deployment built/pushed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613063446`, applied manifests, rolled out successfully, and passed health/readiness. First authenticated smoke found missing prior Goal 6 DB columns; applied additive schema readiness patch (`ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`) through the Backups pod. Final smoke passed for health, readiness, info, unauthenticated `/jobs` HTTP 401, authenticated dashboard summary, jobs, targets, and recent backup runs. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 4 suites and 12 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed; full production smoke passed. No destructive backup deletion or restore was performed. No commit or push was performed.
 2026-06-13: Completed BAK-G6 safety audit controls on `codex/backups-goal-05-coverage-model` with recorded branch deviation. Added audit event persistence, low-retention owner approval metadata and validation, backup-run deletion denial with audit evidence, production restore approval fields and exact target/run confirmation, sanitized restore public serialization, focused safety tests, and admin UI friction for low retention and restore. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 4 suites and 12 tests; `node --check web/admin/app.js` passed; `git diff --check` passed; unauthenticated `https://backups.alfares.cz/jobs` returned `401`; safety scan found no new secret values and no backup-run repository removal path.
@@ -132,4 +134,4 @@ Next command:
 
 Commit/review request or operational handoff.
 
-Production is running the schema-readiness hardening image and full smoke has passed. Next repository action is owner-directed commit/review or operational handoff.
+Goal 08 schema namespace implementation is ready for review. Next action is owner approval for deployment of the PostgreSQL namespace move, or continue with BackupsModule pg_dump to MinIO nightly.
