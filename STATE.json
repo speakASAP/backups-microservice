@@ -24,12 +24,12 @@
     "BAK-G12 NotificationsModule integration",
     "BAK-G13 LoggingModule integration"
   ],
-  "next_goal": "Confirm next roadmap goal with owner",
+  "next_goal": "Owner selection of a new Goal 14 or explicit conversion of an open decision into an implementation goal",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Approved notification/logging deployment completed on 2026-06-13 with image localhost:5000/backups-microservice:cb06ec77 in namespace statex-apps. Rollout, health, readiness, and full smoke passed. Goals 12 and 13 are deployed; next roadmap goal needs owner selection."
+  "notes": "Goal 04 restore verification evidence was revalidated on main on 2026-06-13 with build, full Jest suite, admin JS syntax, and diff checks passing. Goals 01-13 are complete; no numbered roadmap goal is currently ready to implement without owner selection."
 }

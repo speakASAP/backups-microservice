@@ -14,17 +14,17 @@ English continuation command:
 Continue implementation of this project.
 ```
 
-To start the next specific goal:
+To start a future specific goal after owner selection:
 
 ```text
-BACKUPS ORCHESTRATOR: implement goal number 7
+BACKUPS ORCHESTRATOR: implement goal number N
 ```
 
 ## Current Status
 
 - Active goal: none
-- Active branch: `codex/backups-logging-integration`
-- Current wave: Wave 12 - notification/logging integration deployed; next roadmap goal pending owner selection
+- Active branch: `main`
+- Current wave: Roadmap complete through Goal 13; no numbered implementation goal remains until owner selects the next roadmap item
 - Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration
 - Running goals: none
 - Blocked goals: none
@@ -104,6 +104,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Revalidated BAK-G4 restore verification evidence on `main` after explicit owner request. No code changes were needed because the implementation is already present and merged: backup run verification fields/migration, pending/skipped backup-flow evidence, restore execution verification updates, distinct verification notifications, and admin UI visibility are tracked files on `main`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 11 suites and 38 tests; `node --check web/admin/app.js` passed; `git diff --check` passed; worktree remained clean. Roadmap check: implementation-goals/README.md, this state file, STATE.json, and scripts/next_goal.sh now agree that Goals 01-13 are done, so no numbered roadmap goal is currently ready to implement; the next implementation requires owner selection of a new Goal 14 or explicit expansion of an open decision.
 2026-06-13: Deployed approved notification/logging branch `codex/backups-logging-integration` at commit `cb06ec77` to `statex-apps` with image `localhost:5000/backups-microservice:cb06ec77`. Kubernetes manifests applied, deployment rolled out successfully, health and readiness checks passed, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. This deployed BAK-G12 NotificationsModule integration and BAK-G13 LoggingModule integration. No manual backup, backup deletion, or restore was performed during deployment validation.
 2026-06-13: Implemented BAK-G13 LoggingModule integration on `codex/backups-logging-integration`. Added structured `LoggerService.operation()` events with recursive redaction before local and remote logging; kept Nest logger API compatibility; added operation events for backup run, restore request, retention cleanup, backup job, and audit event lifecycle paths; and added focused logger tests. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 10 suites and 35 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
 2026-06-13: Implemented BAK-G12 NotificationsModule integration on `codex/backups-notifications-integration`. Added typed notification event constants and helper methods for backup success/failure, verification pending/verified/failed, restore completed/failed, and retention cleanup success/failure; added recursive redaction for secret-like detail keys; replaced direct backup/restore sends with typed helpers; and added retention failure notification coverage. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 9 suites and 31 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
@@ -144,6 +145,4 @@ Next command:
 
 ## Next Action
 
-Commit/review request or operational handoff.
-
-Notification and logging integration deployment is complete. Next action is confirm the next roadmap goal with the owner.
+No numbered roadmap goal is currently ready to implement. Goals 01-13 are done and deployed where owner approval was required. Next action is owner selection of a new Goal 14 or explicit conversion of an open decision into an implementation goal.
