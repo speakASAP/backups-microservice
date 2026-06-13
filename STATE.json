@@ -21,14 +21,15 @@
     "BAK-G9 nightly PostgreSQL backup to MinIO",
     "BAK-G10 configurable cron schedule policies",
     "BAK-G11 restore from MinIO and verify",
-    "BAK-G12 NotificationsModule integration"
+    "BAK-G12 NotificationsModule integration",
+    "BAK-G13 LoggingModule integration"
   ],
-  "next_goal": "Add LoggingModule integration",
+  "next_goal": "Review/deploy pending notification and logging integration branches",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 12 NotificationsModule integration implemented but not deployed. Added typed, best-effort, secret-safe success/failure notifications for backup, restore, verification, and retention events. Build, full Jest, smoke shell syntax, and diff hygiene passed. Next implementation target is LoggingModule integration."
+  "notes": "Goal 13 LoggingModule integration implemented but not deployed. Added structured, redacted, best-effort operational logging for backup, restore, retention, job, and audit lifecycle events. Build, full Jest, smoke shell syntax, and diff hygiene passed. Next action is review/deploy pending notification and logging integration branches."
 }

@@ -5,6 +5,8 @@ import { SourceCategory } from '../src/targets/entities/backup-target.entity';
 import { CreateRestoreDto } from '../src/restore/dto/create-restore.dto';
 
 describe('Safety audit controls', () => {
+  const logger = { operation: jest.fn() };
+
   it('defines audit actions for destructive and risk-changing operations', () => {
     expect(AuditAction.RETENTION_APPROVAL).toBe('retention_approval');
     expect(AuditAction.BACKUP_RUN_DELETE_DENIED).toBe('backup_run_delete_denied');
@@ -21,7 +23,7 @@ describe('Safety audit controls', () => {
       findOne: jest.fn(async () => ({ id: 'target-1', source_category: SourceCategory.POSTGRES_DATABASE })),
     };
     const audit = { record: jest.fn() };
-    const service = new JobsService(repo as any, targetRepo as any, audit as any);
+    const service = new JobsService(repo as any, targetRepo as any, audit as any, logger as any);
 
     await expect(service.create({
       target_id: '00000000-0000-0000-0000-000000000001',
@@ -41,7 +43,7 @@ describe('Safety audit controls', () => {
       findOne: jest.fn(async () => ({ id: 'target-1', source_category: SourceCategory.POSTGRES_DATABASE })),
     };
     const audit = { record: jest.fn(async () => ({})) };
-    const service = new JobsService(repo as any, targetRepo as any, audit as any);
+    const service = new JobsService(repo as any, targetRepo as any, audit as any, logger as any);
 
     await service.create({
       target_id: '00000000-0000-0000-0000-000000000001',

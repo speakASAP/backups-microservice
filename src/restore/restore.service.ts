@@ -106,6 +106,17 @@ export class RestoreService {
     request.status = RestoreStatus.RUNNING;
     request.started_at = new Date();
     await this.repo.save(request);
+    this.logger.operation({
+      event: 'restore.request.started',
+      message: 'Approved restore request started',
+      context: 'RestoreService',
+      metadata: {
+        request_id: request.id,
+        backup_run_id: backupRun.id,
+        target_id: target.id,
+        actor: request.requested_by || request.approval_actor,
+      },
+    });
 
     const env = this.walg.buildEnv(
       { storage_prefix: backupRun.storage_path || undefined },
@@ -147,6 +158,17 @@ export class RestoreService {
         request_id: request.id,
         backup_run_id: backupRun.id,
       });
+      this.logger.operation({
+        event: 'restore.request.completed',
+        message: `Restore request completed for target ${target.name}`,
+        context: 'RestoreService',
+        metadata: {
+          request_id: request.id,
+          backup_run_id: backupRun.id,
+          target_id: target.id,
+          verification_status: backupRun.verification_status,
+        },
+      });
     } else {
       request.status = RestoreStatus.FAILED;
       request.error_message = output.slice(-500);
@@ -175,7 +197,18 @@ export class RestoreService {
         backup_run_id: backupRun.id,
         error: request.error_message,
       });
-      this.logger.error(`Restore failed request=${request.id}`, output, 'RestoreService');
+      this.logger.operation({
+        event: 'restore.request.failed',
+        level: 'error',
+        message: `Restore request failed for target ${target.name}`,
+        context: 'RestoreService',
+        metadata: {
+          request_id: request.id,
+          backup_run_id: backupRun.id,
+          target_id: target.id,
+          error: request.error_message,
+        },
+      });
     }
   }
 }
