@@ -76,7 +76,12 @@ export class BackupService implements OnModuleInit {
       }),
     );
 
-    this.logger.log(`Starting backup run=${run.id} job=${job.name}`, 'BackupService');
+    this.logger.operation({
+      event: 'backup.run.started',
+      message: `Starting backup run for job ${job.name}`,
+      context: 'BackupService',
+      metadata: { job_id: job.id, run_id: run.id, trigger: triggeredBy },
+    });
 
     const dbPassword = process.env.DB_PASSWORD || '';
     const env = this.walg.buildEnv(job, job.target, dbPassword);
@@ -106,6 +111,18 @@ export class BackupService implements OnModuleInit {
         reason: run.verification_reason,
       });
 
+      this.logger.operation({
+        event: 'backup.run.succeeded',
+        message: `Backup run completed for job ${job.name}`,
+        context: 'BackupService',
+        metadata: {
+          job_id: job.id,
+          run_id: run.id,
+          duration_sec: durationSec,
+          verification_status: run.verification_status,
+        },
+      });
+
       await this.retention.cleanup(job, env);
     } else {
       run.status = BackupRunStatus.FAILED;
@@ -118,7 +135,17 @@ export class BackupService implements OnModuleInit {
         run_id: run.id,
         error: run.error_message,
       });
-      this.logger.error(`Backup failed job=${job.id} run=${run.id}`, output, 'BackupService');
+      this.logger.operation({
+        event: 'backup.run.failed',
+        level: 'error',
+        message: `Backup run failed for job ${job.name}`,
+        context: 'BackupService',
+        metadata: {
+          job_id: job.id,
+          run_id: run.id,
+          error: run.error_message,
+        },
+      });
     }
 
     return run;
@@ -156,6 +183,18 @@ export class BackupService implements OnModuleInit {
       backup_run_id: run.id,
       reason: auditReason,
       metadata: { status: run.status },
+    });
+    this.logger.operation({
+      event: 'backup.run.delete.denied',
+      level: 'warn',
+      message: 'Backup run deletion denied',
+      context: 'BackupService',
+      metadata: {
+        actor: actor || 'unknown',
+        job_id: run.job_id,
+        run_id: run.id,
+        status: run.status,
+      },
     });
     throw new MethodNotAllowedException('Backup run deletion is disabled. Preserve backup evidence or request owner-approved retention policy changes instead.');
   }

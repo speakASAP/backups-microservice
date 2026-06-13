@@ -23,9 +23,9 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 ## Current Status
 
 - Active goal: none
-- Active branch: `codex/backups-notifications-integration`
-- Current wave: Wave 10 - NotificationsModule integration implemented; deployment pending owner approval
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration
+- Active branch: `codex/backups-logging-integration`
+- Current wave: Wave 11 - LoggingModule integration implemented; deployment pending owner approval
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -56,6 +56,7 @@ BACKUPS ORCHESTRATOR: implement goal number 7
 | 10 | `implementation-goals/GOAL-10-configurable-schedules.md` | done | `codex/backups-schedule-policies` | 09 | Deployed after owner approval in combined rollout |
 | 11 | `implementation-goals/GOAL-11-restore-from-minio-verify.md` | done | `codex/backups-restore-minio-verify` | 10 | Deployed after owner approval in combined rollout |
 | 12 | `implementation-goals/GOAL-12-notifications-integration.md` | implemented-not-deployed | `codex/backups-notifications-integration` | 11 | Notification event changes require owner-approved deployment |
+| 13 | `implementation-goals/GOAL-13-logging-integration.md` | implemented-not-deployed | `codex/backups-logging-integration` | 12 | Logging event shape changes require owner-approved deployment |
 
 ## Execution Waves
 
@@ -103,6 +104,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-13: Implemented BAK-G13 LoggingModule integration on `codex/backups-logging-integration`. Added structured `LoggerService.operation()` events with recursive redaction before local and remote logging; kept Nest logger API compatibility; added operation events for backup run, restore request, retention cleanup, backup job, and audit event lifecycle paths; and added focused logger tests. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 10 suites and 35 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
 2026-06-13: Implemented BAK-G12 NotificationsModule integration on `codex/backups-notifications-integration`. Added typed notification event constants and helper methods for backup success/failure, verification pending/verified/failed, restore completed/failed, and retention cleanup success/failure; added recursive redaction for secret-like detail keys; replaced direct backup/restore sends with typed helpers; and added retention failure notification coverage. Validation: RAG lookup attempted but internal hostname was not resolvable from the remote shell; `npm run build` passed; `npm test -- --runInBand` passed with 9 suites and 31 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No backup was triggered, no backup deletion or restore was performed, and no production deployment was performed.
 2026-06-13: Deployed approved combined schema/nightly/schedule/restore branch `codex/backups-restore-minio-verify` at commit `fc8c225f` to `statex-apps` with image `localhost:5000/backups-microservice:fc8c225f`. Kubernetes manifests applied, deployment rolled out successfully, health and readiness checks passed, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. This deployed BAK-G8 PostgreSQL schema namespace, BAK-G9 nightly PostgreSQL backup bootstrap, BAK-G10 configurable schedule policies, and BAK-G11 restore verification hardening. No manual backup, backup deletion, or restore was performed during deployment validation.
 2026-06-13: Implemented BAK-G11 restore from MinIO and verify on `codex/backups-restore-minio-verify`. Added isolated restore working directory and WAL-G backup-name helpers, rejected restore execution for non-success backup runs, updated backup-run verification status to verifying/verified/failed around restore execution, and persisted verification evidence through an injected BackupRun repository. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 8 suites and 27 tests; `bash -n scripts/smoke-test.sh` passed; `git diff --check` passed. No restore was executed, no backup deletion was performed, and raw WAL-G output remains omitted from public restore responses.
@@ -143,4 +145,4 @@ Next command:
 
 Commit/review request or operational handoff.
 
-NotificationsModule integration is implemented and awaiting review/deployment approval. Next action is continue with LoggingModule integration.
+LoggingModule integration is implemented and awaiting review/deployment approval. Next action is review/deploy pending notification and logging integration branches.

@@ -12,7 +12,7 @@
 - [x] Implement SchedulesModule: configurable cron policies
 - [x] Implement RestoresModule: restore from MinIO + verify
 - [x] Add NotificationsModule integration (success/failure)
-- [ ] Add LoggingModule integration
+- [x] Add LoggingModule integration
 - [x] Implement restore verification state and evidence
 - [x] Add coverage model for service owner, RPO/RTO, source type, and criticality
 - [x] Harden retention, backup-run deletion, and production restore approval controls

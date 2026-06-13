@@ -7,6 +7,7 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { BackupTarget, SourceCategory } from '../targets/entities/backup-target.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-event.entity';
+import { LoggerService } from '../../shared/logger/logger.service';
 import { resolveSchedulePolicy } from './schedule-policy';
 
 const MIN_SAFE_FULL_BACKUPS = 3;
@@ -28,6 +29,7 @@ export class JobsService {
     @InjectRepository(BackupJob) private repo: Repository<BackupJob>,
     @InjectRepository(BackupTarget) private targetRepo: Repository<BackupTarget>,
     private audit: AuditService,
+    private logger: LoggerService,
   ) {}
 
   findAll(): Promise<BackupJob[]> {
@@ -66,6 +68,18 @@ export class JobsService {
       enabled: dto.enabled ?? true,
     });
     const saved = await this.repo.save(job);
+    this.logger.operation({
+      event: 'backup.job.created',
+      message: `Backup job created: ${saved.name}`,
+      context: 'JobsService',
+      metadata: {
+        job_id: saved.id,
+        target_id: saved.target_id,
+        retention_full_count: saved.retention_full_count,
+        schedule_policy: saved.schedule_policy,
+        actor,
+      },
+    });
     if (saved.retention_full_count < MIN_SAFE_FULL_BACKUPS) {
       await this.audit.record({
         action: AuditAction.RETENTION_APPROVAL,
@@ -113,6 +127,19 @@ export class JobsService {
     }
 
     const saved = await this.repo.save(job);
+    this.logger.operation({
+      event: 'backup.job.updated',
+      message: `Backup job updated: ${saved.name}`,
+      context: 'JobsService',
+      metadata: {
+        job_id: saved.id,
+        target_id: saved.target_id,
+        previous_retention_full_count: previousRetention,
+        retention_full_count: saved.retention_full_count,
+        schedule_policy: saved.schedule_policy,
+        actor,
+      },
+    });
     if (saved.retention_full_count !== previousRetention || saved.retention_full_count < MIN_SAFE_FULL_BACKUPS) {
       await this.audit.record({
         action: saved.retention_full_count < MIN_SAFE_FULL_BACKUPS
@@ -138,6 +165,13 @@ export class JobsService {
     const job = await this.findOne(id);
     job.enabled = false;
     await this.repo.save(job);
+    this.logger.operation({
+      event: 'backup.job.disabled',
+      level: 'warn',
+      message: `Backup job disabled: ${job.name}`,
+      context: 'JobsService',
+      metadata: { job_id: job.id, target_id: job.target_id },
+    });
   }
 
   async updateLastRunAt(id: string): Promise<void> {
