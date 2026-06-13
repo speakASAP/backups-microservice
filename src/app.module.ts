@@ -18,6 +18,8 @@ import { JwtRolesGuard } from './auth/jwt-roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { AuditModule } from './audit/audit.module';
+import { SchemaReadinessModule } from './schema/schema-readiness.module';
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     }),
     AuthModule,
     LoggerModule,
+    AuditModule,
     TargetsModule,
     JobsModule,
     BackupModule,
@@ -45,6 +48,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     DestinationsModule,
     DiscoveryModule,
     DashboardModule,
+    SchemaReadinessModule,
   ],
   controllers: [HealthController, InfoController],
   providers: [{ provide: APP_GUARD, useClass: JwtRolesGuard }],

@@ -14,7 +14,8 @@ NC='\033[0m'
 SERVICE_NAME="backups-microservice"
 NAMESPACE="${NAMESPACE:-statex-apps}"
 REGISTRY="localhost:5000"
-HEALTH_PORT="${PORT:-3398}"
+SERVICE_PORT="${PORT:-3398}"
+HEALTH_PORT="${SERVICE_PORT}"
 HEALTH_PATH="/health"
 HEALTH_MAX_ATTEMPTS="${HEALTH_MAX_ATTEMPTS:-30}"
 HEALTH_INTERVAL_SEC="${HEALTH_INTERVAL_SEC:-2}"
@@ -104,6 +105,36 @@ while [ "${attempt}" -le "${HEALTH_MAX_ATTEMPTS}" ]; do
   attempt=$((attempt + 1))
 done
 deploy_timing_phase_end "Health check"
+
+deploy_timing_phase_start "Readiness check"
+attempt=1
+while [ "${attempt}" -le "${HEALTH_MAX_ATTEMPTS}" ]; do
+  POD=$(kubectl get pod -n "${NAMESPACE}" \
+    -l "app=${SERVICE_NAME}" \
+    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+  if [ -z "${POD}" ]; then
+    echo -e "${RED}❌ No pod found for ${SERVICE_NAME}${NC}"
+    exit 1
+  fi
+  if kubectl exec -n "${NAMESPACE}" "${POD}" -- node -e \
+    "fetch('http://127.0.0.1:${HEALTH_PORT}/health/readiness').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" \
+    2>/dev/null; then
+    echo -e "${GREEN}✅ Readiness check OK${NC}"
+    break
+  fi
+  if [ "${attempt}" -eq "${HEALTH_MAX_ATTEMPTS}" ]; then
+    echo -e "${RED}❌ Readiness check failed after ${HEALTH_MAX_ATTEMPTS} attempts${NC}"
+    exit 1
+  fi
+  echo -e "${YELLOW}   readiness attempt ${attempt}/${HEALTH_MAX_ATTEMPTS}, retry in ${HEALTH_INTERVAL_SEC}s...${NC}"
+  sleep "${HEALTH_INTERVAL_SEC}"
+  attempt=$((attempt + 1))
+done
+deploy_timing_phase_end "Readiness check"
+
+deploy_timing_phase_start "Smoke test"
+BACKUPS_SMOKE_BASE_URL="${BACKUPS_SMOKE_BASE_URL:-https://backups.alfares.cz}" bash "${PROJECT_ROOT}/scripts/smoke-test.sh"
+deploy_timing_phase_end "Smoke test"
 
 deploy_timing_finish_success "$SERVICE_NAME"
 echo "Image:     ${IMAGE}"

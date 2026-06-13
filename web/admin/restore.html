@@ -42,7 +42,7 @@
 
     <section class="danger-panel">
       <strong>Production restore is destructive.</strong>
-      <span>Only submit a restore after human approval names the source backup run and restore target. This UI keeps the warning visible, but the next backend goal must add approval evidence fields.</span>
+      <span>Only submit a restore after human approval names the source backup run, restore target, actor, and reason. The backend rejects requests without matching approval evidence.</span>
     </section>
 
     <section id="restore-form-panel" class="panel hidden">
@@ -61,9 +61,25 @@
           <span>Restore target</span>
           <select id="restore-target" required></select>
         </label>
-        <label class="span-2 confirm-line">
+        <label>
+          <span>Confirm backup run ID</span>
+          <input id="restore-confirm-run" required placeholder="Repeat the exact backup run ID">
+        </label>
+        <label>
+          <span>Confirm target ID</span>
+          <input id="restore-confirm-target" required placeholder="Repeat the exact target ID">
+        </label>
+        <label>
+          <span>Approval actor</span>
+          <input id="restore-approval-actor" required placeholder="owner@example.com">
+        </label>
+        <label>
+          <span>Approval reason</span>
+          <textarea id="restore-approval-reason" required rows="3" placeholder="Human approval reason for this production restore"></textarea>
+        </label>
+        <label class="span-2 confirm-line danger-confirm">
           <input id="restore-confirm" type="checkbox">
-          <span>I have explicit human approval for this restore target.</span>
+          <span>I have explicit human approval for this production restore target and backup run.</span>
         </label>
         <div class="form-actions span-2">
           <button class="button danger" type="submit">Submit restore</button>

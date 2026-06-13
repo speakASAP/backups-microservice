@@ -5,7 +5,7 @@ id: BAK-G5
 status: done
 owner: orchestrator
 created: 2026-06-12
-last_updated: 2026-06-12
+last_updated: 2026-06-13
 ```
 
 ## Objective
@@ -47,14 +47,17 @@ docs/orchestrator/backup-intent-plan.md
 
 Completed on branch `codex/backups-goal-05-coverage-model`.
 
-- Added coverage metadata fields to backup targets: service owner, source category, criticality, RPO/RTO, restore class, Kubernetes namespace, and coverage notes.
-- Added additive migration `1748563500000-CoverageModel` with nullable/defaulted columns for backward compatibility.
-- Dashboard summary now returns coverage stats and discovered unprotected sources without exposing secrets or backup artifact paths.
-- Admin dashboard shows coverage classes, configured target metadata, and discovered unprotected sources; target creation can capture coverage metadata for PostgreSQL sources.
-- Documented contracts for MinIO bucket, Kubernetes resource, secret reference, and PVC source classes before implementing those backup engines.
+- Added/verified coverage metadata fields and migration for backup targets: service owner, source category, criticality, RPO/RTO, restore class, Kubernetes namespace, and coverage notes.
+- Preserved PostgreSQL defaults for existing targets and kept executable WAL-G jobs limited to `postgres_database`.
+- Dashboard summary exposes coverage stats, source contracts, and discovered unprotected sources without exposing secrets or backup artifact paths.
+- Admin dashboard shows coverage classes, source contracts, configured target metadata, and discovered unprotected sources; contract-only categories cannot create executable schedules from the UI.
+- Added focused enum tests for target/source coverage contracts.
+- Narrowed `.gitignore` backup patterns so active backup source and test files are visible to Git.
 
 Validation:
 
 - `npm run build` passed.
-- `npm test -- --runInBand` passed with 2 suites and 5 tests.
+- `npm test -- --runInBand` passed with 3 suites and 8 tests.
 - `node --check web/admin/app.js` passed.
+- `git diff --check` passed.
+- Changed-file secret/safety scan found only policy text and safe reference strings, not secret values.

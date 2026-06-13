@@ -9,6 +9,7 @@ import { JobsModule } from '../jobs/jobs.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LoggerModule } from '../../shared/logger/logger.module';
 import { RetentionModule } from '../retention/retention.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { RetentionModule } from '../retention/retention.module';
     JobsModule,
     NotificationsModule,
     LoggerModule,
+    AuditModule,
     forwardRef(() => RetentionModule),
   ],
   providers: [BackupService],

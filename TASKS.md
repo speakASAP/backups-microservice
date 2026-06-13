@@ -15,9 +15,13 @@
 - [ ] Add LoggingModule integration
 - [x] Implement restore verification state and evidence
 - [x] Add coverage model for service owner, RPO/RTO, source type, and criticality
-- [ ] Harden retention, backup-run deletion, and production restore approval controls
-- [ ] Production readiness review
+- [x] Harden retention, backup-run deletion, and production restore approval controls
+- [x] Production readiness review
 
 ## Orchestrated Next Action
 
-- [ ] `BAK-G6` Safety and audit controls for retention, deletion, and production restore approval
+- [x] `BAK-G6` Safety and audit controls for retention, deletion, and production restore approval
+- [x] `BAK-G7` Production readiness and smoke tests
+
+- [x] Owner review and deployment approval
+- [x] Automate additive schema readiness before service startup

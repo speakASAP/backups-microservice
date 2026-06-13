@@ -8,9 +8,10 @@ import { TargetsModule } from '../targets/targets.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { LoggerModule } from '../../shared/logger/logger.module';
 import { WalgModule } from '../backup/walg.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RestoreRequest]), BackupModule, TargetsModule, NotificationsModule, LoggerModule, WalgModule],
+  imports: [TypeOrmModule.forFeature([RestoreRequest]), BackupModule, TargetsModule, NotificationsModule, LoggerModule, WalgModule, AuditModule],
   providers: [RestoreService],
   controllers: [RestoreController],
 })

@@ -1,7 +1,7 @@
 {
   "stage": "orchestrated-implementation",
   "health": "healthy-public-health-check",
-  "last_updated": "2026-06-12",
+  "last_updated": "2026-06-13",
   "intent_preservation_system": {
     "process": "docs/process/INTENT_PRESERVATION_SYSTEM.md",
     "invariants": "docs/process/PROJECT_INVARIANTS.md",
@@ -14,14 +14,16 @@
     "BAK-G2 operator dashboard frontend",
     "BAK-G3 dashboard summary API",
     "BAK-G4 restore verification evidence",
-    "BAK-G5 coverage model"
+    "BAK-G5 coverage model",
+    "BAK-G6 safety audit controls",
+    "BAK-G7 production readiness and smoke tests"
   ],
-  "next_goal": "BAK-G6 safety and audit controls",
+  "next_goal": "Commit/review request or operational handoff",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 05 coverage model completed and validated on the remote filesystem. Build, full Jest, and admin JS syntax checks passed. Next goal is BAK-G6 safety and audit controls for retention, deletion, and production restore approval."
+  "notes": "Nearest follow-up hardening implemented and deployed: Backups now runs an idempotent startup SchemaReadinessService before listening, applying only additive Goal 4/5/6 schema alignment. Build, full Jest, diff hygiene, rollout, readiness, and full authenticated smoke passed. Production image localhost:5000/backups-microservice:aa2f4911-dirty-20260613064342 is ready 1/1. No destructive backup deletion or restore was performed. No commit or push was performed."
 }
