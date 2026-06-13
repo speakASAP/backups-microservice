@@ -20,6 +20,7 @@ import { DestinationsModule } from './destinations/destinations.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuditModule } from './audit/audit.module';
 import { SchemaReadinessModule } from './schema/schema-readiness.module';
+import { getDatabaseSchema } from './config/database';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SchemaReadinessModule } from './schema/schema-readiness.module';
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'backups',
       autoLoadEntities: true,
+      schema: getDatabaseSchema(),
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
     }),
