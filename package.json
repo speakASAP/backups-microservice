@@ -13,6 +13,9 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
+    "smoke": "bash scripts/smoke-test.sh",
+    "migration:run": "npm run build && typeorm -d dist/src/data-source.js migration:run",
+    "migration:show": "npm run build && typeorm -d dist/src/data-source.js migration:show",
     "test:cov": "jest --coverage"
   },
   "dependencies": {

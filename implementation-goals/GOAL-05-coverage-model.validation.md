@@ -1,41 +1,72 @@
-# VR-BAK-G5: Coverage Model Validation Report
+# VAL-BAK-G5: Ecosystem Coverage Model Validation
 
 ```yaml
-id: VR-BAK-G5
-status: complete
-source_goal: implementation-goals/GOAL-05-coverage-model.md
-owner: orchestrator
-created: 2026-06-12
-last_updated: 2026-06-12
+id: VAL-BAK-G5
+status: passed
+validated_artifact: implementation-goals/GOAL-05-coverage-model.md
+owner: validator
+created: 2026-06-13
+last_updated: 2026-06-13
+completeness_level: complete
 ```
 
-## Scope Validated
+## Artifact Validated
 
-Goal 05 coverage metadata, additive target migration, dashboard summary coverage stats, unprotected discovered-service visibility, admin UI coverage fields, and future source-class contracts.
+Target: `BAK-G5 Ecosystem Coverage Model` on `codex/backups-goal-05-coverage-model`.
 
-## Commands
+## Validation Scope
 
-- [x] `npm run build` - passed.
-- [x] `npm test -- --runInBand` - passed, 2 suites and 5 tests.
-- [x] `node --check web/admin/app.js` - passed.
+Validated target/source coverage metadata schema, PostgreSQL backward compatibility, contract-only source category safety, dashboard summary and admin UI visibility, secret exposure and ownership invariants, and state updates.
 
-## Invariant Evidence
+## Evidence
 
-- `BAK-INV-001`: pass. Backups owns coverage metadata and operator status only; application-domain data remains out of scope.
-- `BAK-INV-003`: pass. Changed UI/API fields expose metadata and secret references only; no secret values were added.
-- `BAK-INV-004`: pass. Dashboard coverage keeps restore verification evidence and adds coverage gaps instead of implying unverified protection.
-- `BAK-INV-007`: pass. New source classes extend target metadata without changing PostgreSQL backup execution.
-- `BAK-INV-008`: pass. Dashboard and target endpoints keep existing auth/module boundaries; no public management endpoint was added.
-- `BAK-INV-009`: pass. Execution plan, context package, coding prompt, validation report, gates, and state updates were created before completion.
+- Added coverage metadata migration for `backup_targets` with backward-compatible PostgreSQL defaults.
+- Added `JobsService.create` guard that rejects executable jobs for non-`postgres_database` targets.
+- Added dashboard `source_contracts` metadata for implemented PostgreSQL support and contract-only MinIO, Kubernetes resource, secret reference, and PVC categories.
+- Added admin UI source-contract rendering and UI guard against contract-only target-and-schedule creation.
+- Added `test/backup-target-enums.spec.ts` for coverage enum contracts.
+- Narrowed `.gitignore` backup artifact patterns so backup source/test files remain visible to Git.
 
-## Sensitive-Data Review
+## Gate Evidence
 
-`rg -n "password|token|secret|private key|BEGIN|AKIA|WALG_|MINIO_" src web implementation-goals docs/orchestrator/backup-intent-plan.md` found existing environment-token handling and secret-reference labels. No raw secret values, private keys, credentials, or sensitive backup artifact paths were introduced by Goal 05.
+| Gate | Status | Evidence |
+|---|---|---|
+| Documentation gate | pass | Plan, context, coding prompt, and validation shell existed before source edits. |
+| Build | pass | `npm run build` completed successfully. |
+| Tests | pass | `npm test -- --runInBand` passed: 3 suites, 8 tests. |
+| Frontend syntax | pass | `node --check web/admin/app.js` completed with no syntax errors. |
+| Diff hygiene | pass | `git diff --check` passed. |
+| Secret scan | pass | Changed-file scan found policy/reference text only; no secret values, credentials, signed URLs, raw data, `walg_output`, or `storage_path` exposure added. |
+| Contract-only safety | pass | `JobsService.create` rejects non-PostgreSQL targets; admin UI blocks contract-only schedule creation. |
 
-## Result
+## Backup Safety Evidence
 
-Pass. Goal 05 is complete on branch `codex/backups-goal-05-coverage-model`.
+| Invariant | Status | Evidence |
+|---|---|---|
+| `BAK-INV-001` ownership | pass | Changes add coverage metadata and contracts only; no application-domain data ownership added. |
+| `BAK-INV-003` secret handling | pass | Secret references remain references only; source contracts explicitly forbid credential values. |
+| `BAK-INV-004` coverage visibility | pass | Dashboard summary/UI expose source contracts, protected coverage, and discovered gaps. |
+| `BAK-INV-006` audit/risk operations | pass | No destructive operation was added or changed. |
+| `BAK-INV-007` extensibility | pass | New source categories are contract-only and PostgreSQL defaults remain backward compatible. |
+| `BAK-INV-008` auth boundary | pass | Controllers/guards were not weakened. |
+| `BAK-INV-009` IPS chain | pass | Goal 05 execution plan, context package, coding prompt, validation report, code changes, validation, and state updates exist. |
 
-## Next Action
+## Passed Criteria
 
-Implement `BAK-G6` safety and audit controls.
+- Target/source model identifies service owner, source category, criticality, RPO/RTO, and restore class.
+- PostgreSQL behavior remains backward compatible.
+- MinIO bucket, Kubernetes resource, secret reference, and PVC categories are documented and visible as contract-only.
+- Dashboard shows protected and unprotected configured/discovered sources and source contract metadata.
+- Build, tests, frontend syntax, and diff hygiene passed.
+
+## Failed Criteria
+
+None.
+
+## Deviations
+
+- Modified `.gitignore` because broad `*backup*` rules hid the new backup-target test from Git. This matches the repository hygiene fix already recorded by Goal 04.
+
+## Recommendation
+
+Goal 05 is implementation-complete and validated on the remote filesystem. Next action: implement Goal 06 safety audit controls after owner review.

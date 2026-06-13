@@ -18,7 +18,9 @@ import { JwtRolesGuard } from './auth/jwt-roles.guard';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { DiscoveryModule } from './discovery/discovery.module';
-import { AuditModule } from "./audit/audit.module";
+import { AuditModule } from './audit/audit.module';
+import { SchemaReadinessModule } from './schema/schema-readiness.module';
+import { getDatabaseSchema } from './config/database';
 
 @Module({
   imports: [
@@ -32,11 +34,13 @@ import { AuditModule } from "./audit/audit.module";
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'backups',
       autoLoadEntities: true,
+      schema: getDatabaseSchema(),
       synchronize: false,
       logging: process.env.NODE_ENV === 'development',
     }),
     AuthModule,
     LoggerModule,
+    AuditModule,
     TargetsModule,
     JobsModule,
     BackupModule,
@@ -46,7 +50,7 @@ import { AuditModule } from "./audit/audit.module";
     DestinationsModule,
     DiscoveryModule,
     DashboardModule,
-    AuditModule,
+    SchemaReadinessModule,
   ],
   controllers: [HealthController, InfoController],
   providers: [{ provide: APP_GUARD, useClass: JwtRolesGuard }],

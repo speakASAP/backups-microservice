@@ -15,15 +15,21 @@
     "BAK-G3 dashboard summary API",
     "BAK-G4 restore verification evidence",
     "BAK-G5 coverage model",
-    "BAK-G6 safety and audit controls",
-    "BAK-G7 production readiness"
+    "BAK-G6 safety audit controls",
+    "BAK-G7 production readiness and smoke tests",
+    "BAK-G8 PostgreSQL schema namespace and migrations",
+    "BAK-G9 nightly PostgreSQL backup to MinIO",
+    "BAK-G10 configurable cron schedule policies",
+    "BAK-G11 restore from MinIO and verify",
+    "BAK-G12 NotificationsModule integration",
+    "BAK-G13 LoggingModule integration"
   ],
-  "next_goal": "owner review and production deployment approval",
+  "next_goal": "Confirm next roadmap goal with owner",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 07 production readiness completed and validated in remote worktree /home/ssf/Documents/Github/backups-microservice-goal06. Added database/storage readiness checks, smoke runner, deploy hook, and readiness probe update. Build, Jest, smoke script syntax, deploy shell syntax, diff whitespace, and mock HTTP smoke passed. Production deployment completed with image localhost:5000/backups-microservice:7e56194c; health, readiness, info, protected endpoint rejection, and in-pod smoke checks passed. Supplemental 2026-06-13 validation fixed broad backup ignore rules, added the missing delete-backup-run DTO, and added focused Goal 06 safety tests; build, Jest, admin JS syntax, and diff whitespace checks passed. Supplemental production deployment completed with image localhost:5000/backups-microservice:c5e8bc6a; deployment script migration, rollout, and smoke checks passed; external health, readiness, info, and protected endpoint rejection checks passed."
+  "notes": "Approved notification/logging deployment completed on 2026-06-13 with image localhost:5000/backups-microservice:cb06ec77 in namespace statex-apps. Rollout, health, readiness, and full smoke passed. Goals 12 and 13 are deployed; next roadmap goal needs owner selection."
 }

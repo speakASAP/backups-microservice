@@ -13,16 +13,38 @@ export class RetentionService {
   ) {}
 
   async cleanup(job: BackupJob, env: WalgEnv): Promise<void> {
-    this.logger.log(`Running retention cleanup for job=${job.id} retain=${job.retention_full_count}`, 'RetentionService');
+    this.logger.operation({
+      event: 'retention.cleanup.started',
+      message: 'Retention cleanup started',
+      context: 'RetentionService',
+      metadata: { job_id: job.id, retain_count: job.retention_full_count },
+    });
     const result = await this.walg.deleteRetain(env, job.retention_full_count);
     if (result.exitCode === 0) {
-      this.logger.log(`Retention cleanup complete for job=${job.id}`, 'RetentionService');
-      await this.notifications.send('retention.cleanup', `Retention cleanup done for job "${job.name}"`, {
+      this.logger.operation({
+        event: 'retention.cleanup.succeeded',
+        message: 'Retention cleanup completed',
+        context: 'RetentionService',
+        metadata: { job_id: job.id, retain_count: job.retention_full_count },
+      });
+      await this.notifications.retentionCleanupSucceeded(job.name, {
         job_id: job.id,
         retain_count: job.retention_full_count,
       });
     } else {
-      this.logger.warn(`Retention cleanup failed for job=${job.id}: ${result.output}`, 'RetentionService');
+      const error = result.output.slice(-500);
+      this.logger.operation({
+        event: 'retention.cleanup.failed',
+        level: 'warn',
+        message: 'Retention cleanup failed',
+        context: 'RetentionService',
+        metadata: { job_id: job.id, retain_count: job.retention_full_count, error },
+      });
+      await this.notifications.retentionCleanupFailed(job.name, {
+        job_id: job.id,
+        retain_count: job.retention_full_count,
+        error,
+      });
     }
   }
 }

@@ -1,47 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AuditAction, AuditLog } from './audit-log.entity';
+import { AuditAction, AuditEvent } from './entities/audit-event.entity';
 import { LoggerService } from '../../shared/logger/logger.service';
 
 export interface AuditRecordInput {
-  action: AuditAction | string;
-  actor?: string;
-  target_id?: string;
-  job_id?: string;
-  backup_run_id?: string;
-  restore_request_id?: string;
-  reason?: string;
-  metadata?: Record<string, unknown>;
+  action: AuditAction;
+  actor: string;
+  reason: string;
+  target_id?: string | null;
+  job_id?: string | null;
+  backup_run_id?: string | null;
+  restore_request_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 @Injectable()
 export class AuditService {
   constructor(
-    @InjectRepository(AuditLog) private repo: Repository<AuditLog>,
+    @InjectRepository(AuditEvent) private repo: Repository<AuditEvent>,
     private logger: LoggerService,
   ) {}
 
-  async record(input: AuditRecordInput): Promise<void> {
-    const log = this.repo.create({
+  async record(input: AuditRecordInput): Promise<AuditEvent> {
+    const event = this.repo.create({
       action: input.action,
-      actor: input.actor || 'unknown',
+      actor: input.actor,
+      reason: input.reason,
       target_id: input.target_id || null,
       job_id: input.job_id || null,
       backup_run_id: input.backup_run_id || null,
       restore_request_id: input.restore_request_id || null,
-      reason: input.reason || null,
       metadata: input.metadata || null,
     });
-
-    try {
-      await this.repo.save(log);
-      this.logger.log(
-        `audit action=${log.action} actor=${log.actor} target=${log.target_id || '-'} job=${log.job_id || '-'} run=${log.backup_run_id || '-'} restore=${log.restore_request_id || '-'}`,
-        'AuditService',
-      );
-    } catch (error) {
-      this.logger.warn(`Audit log write failed for action=${input.action}: ${(error as Error).message}`, 'AuditService');
-    }
+    const saved = await this.repo.save(event);
+    this.logger.operation({
+      event: 'audit.event.recorded',
+      message: `Audit event recorded: ${saved.action}`,
+      context: 'AuditService',
+      metadata: {
+        audit_event_id: saved.id,
+        action: saved.action,
+        actor: saved.actor,
+        target_id: saved.target_id,
+        job_id: saved.job_id,
+        backup_run_id: saved.backup_run_id,
+        restore_request_id: saved.restore_request_id,
+      },
+    });
+    return saved;
   }
 }

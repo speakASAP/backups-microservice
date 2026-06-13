@@ -1,62 +1,48 @@
-# CP-BAK-G7: Production Readiness And Smoke Tests
-
+# CP-BAK-G7: Production Readiness And Smoke Tests Coding Prompt
 ```yaml
 id: CP-BAK-G7
 status: active
 source_goal: implementation-goals/GOAL-07-production-readiness.md
 source_plan: implementation-goals/GOAL-07-production-readiness.execution-plan.md
 owner: orchestrator
-created: 2026-06-12
-last_updated: 2026-06-12
+created: 2026-06-13
+last_updated: 2026-06-13
 ```
-
 ## Assignment
-
-Implement BAK-G7 production readiness so each rollout can verify public health/info, readiness, auth protection, dashboard summary, jobs, targets, and recent backup runs.
-
+Implement non-destructive production readiness checks for Backups so each deployment can verify public liveness, dependency readiness, unauthenticated rejection for protected routes, and authenticated read-only operational endpoints when an operator-provided smoke token is available.
 ## Scope
-
-- Add additive `/health/readiness` behavior with database and storage readiness checks.
-- Keep `/health` suitable for liveness.
-- Add a Node smoke script that performs non-destructive HTTP checks and supports optional bearer auth from environment variables.
-- Run the smoke script from `scripts/deploy.sh` after rollout.
-- Update Kubernetes readiness probe to `/health/readiness`.
-- Add focused tests and update implementation evidence.
-
+Allowed source and script files:
+- `src/health/health.controller.ts`
+- `scripts/deploy.sh`
+- `scripts/smoke-test.sh`
+- `k8s/deployment.yaml`
+- `package.json`
+Allowed documentation/state files:
+- `implementation-goals/GOAL-07-production-readiness.*.md`
+- `docs/IMPLEMENTATION_STATE.md`
+- `STATE.json`
+- `TASKS.md`
 ## Non-Goals
-
-- Do not deploy to production.
-- Do not trigger backups, restores, deletion, or retention changes.
-- Do not print bearer tokens, secret keys, passwords, or raw artifact paths.
-- Do not weaken endpoint auth to make smoke tests pass.
-
+- Do not deploy to production without owner approval.
+- Do not trigger backups, delete backup runs, or submit restore requests in smoke tests.
+- Do not add secret values, JWTs, service tokens, object-store credentials, or raw artifact paths to source, docs, reports, or examples.
+- Do not weaken Auth or make protected management endpoints public.
 ## Safety Requirements
-
-- Management endpoints must reject unauthenticated requests.
-- Production restore remains human-approved and untouched.
-- Retention and deletion guardrails from Goal 06 remain intact.
-- Health/readiness responses must not expose secret values.
-
+- Smoke checks must be read-only except for ordinary HTTP GET requests.
+- Protected endpoint checks must prove unauthenticated requests are rejected.
+- Authenticated checks must require an operator-provided header or token through the runtime environment and must not print the token.
+- Readiness output may report whether storage configuration is present, but must not expose credentials.
 ## Implementation Notes
-
-Use TypeORM `DataSource` for a lightweight `SELECT 1` database check. Storage readiness should report WAL-G/MinIO configuration readiness separately from database readiness without connecting in a way that requires exposing credentials. The smoke script should fail if authenticated checks are expected but unavailable in deploy, while local runs without a token may treat protected endpoints as correctly rejected.
-
+- Keep `/health` as public liveness.
+- Add a public readiness route that reports database and storage readiness as separate checks.
+- Prefer deterministic HTTP checks in `scripts/smoke-test.sh` using Node's built-in `fetch` so no extra dependency is required.
+- Let authenticated endpoint checks be optional by default and enforceable with `BACKUPS_SMOKE_REQUIRE_AUTH=true`.
+- Wire `scripts/deploy.sh` to run the smoke script after rollout and liveness/readiness checks.
 ## Validation Required
-
-```bash
-npm run build
-npm test -- --runInBand
-node --check scripts/smoke-check.js
-git diff --check
-```
-
+- `npm run build`
+- `npm test -- --runInBand`
+- `bash -n scripts/smoke-test.sh`
+- `git diff --check`
+- Non-destructive HTTP smoke check against an approved target when available.
 ## Report Required
-
-Return:
-
-- files changed;
-- tests/checks run;
-- validation evidence;
-- risks;
-- blockers;
-- intent compliance notes.
+Return changed files, validation evidence, smoke target, skipped authenticated checks if no token was provided, risks, blockers, and intent compliance notes.

@@ -23,13 +23,19 @@ To print the current resume checkpoint from the shell:
 5. `GOAL-05-coverage-model.md` - ecosystem coverage model for databases, object storage, Kubernetes resources, secrets, PVCs, and service ownership.
 6. `GOAL-06-safety-audit-controls.md` - retention, backup-run deletion, restore approval, and audit hardening.
 7. `GOAL-07-production-readiness.md` - smoke tests, readiness checks, deploy evidence, and operational runbook.
+8. `GOAL-08-postgres-schema-migrations.md` - PostgreSQL schema namespace and migration tooling.
+9. `GOAL-09-nightly-pgbackup-minio.md` - default nightly PostgreSQL logical backup job to MinIO.
+10. `GOAL-10-configurable-schedules.md` - configurable hourly/daily/weekly/custom cron schedule policies.
+11. `GOAL-11-restore-from-minio-verify.md` - restore from MinIO/WAL-G and update verification evidence.
+12. `GOAL-12-notifications-integration.md` - success/failure notifications for backup, restore, verification, and retention events.
+13. `GOAL-13-logging-integration.md` - structured, redacted operational logging for backup control-plane lifecycle events.
 
 ## Parallelization
 
 Safe default:
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07
+01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13
 ```
 
 Goal 05 exploration can begin while Goal 04 implementation is active only if it is documentation-only and does not alter shared entities, migrations, DTOs, or UI contracts. Goal 06 depends on the restore verification model from Goal 04.

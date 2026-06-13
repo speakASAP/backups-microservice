@@ -109,6 +109,10 @@ function cronLabel(value) {
   return labels[value] || value || '-';
 }
 
+function currentActorLabel() {
+  return 'admin-session';
+}
+
 function sourceLabel(value) {
   const labels = {
     postgres_database: 'PostgreSQL database',
@@ -240,6 +244,7 @@ function renderDashboard() {
   renderSettings(summary.storage || {}, summary.guardrails || {});
   renderDiscovery(store.discovery || {});
   renderDestinations(summary.storage || {});
+  renderSourceContracts(summary.source_contracts || []);
   renderRunsTable($('runs-table'), summary.recent_runs || []);
 }
 
@@ -405,6 +410,23 @@ function renderDestinations(storage) {
   populateDestinationSelect($('target-destination'));
 }
 
+function renderSourceContracts(contracts) {
+  const list = $('source-contracts-list');
+  if (!list) return;
+  list.innerHTML = contracts.length
+    ? contracts.map((contract) => `<article class="destination-card">
+      <div>
+        <h3>${escapeHtml(sourceLabel(contract.source_category))}</h3>
+        <div class="meta-line">
+          <span>${escapeHtml(sourceLabel(contract.restore_class))}</span>
+          <span>${escapeHtml(contract.credential_policy || '-')}</span>
+        </div>
+      </div>
+      ${statusBadge(contract.execution_status === 'implemented' ? 'enabled' : 'contract only')}
+    </article>`).join('')
+    : '<div class="muted">No source contracts are published by the API.</div>';
+}
+
 function populateDestinationSelect(select) {
   if (!select) return;
   if (store.destinations.length) {
@@ -431,65 +453,58 @@ function renderRunsTable(tbody, runs) {
 }
 
 function renderJobs() {
-  populateTargetSelect($("job-target"));
-  $("jobs-table").innerHTML = store.jobs.length ? store.jobs.map((job) => {
-    const retentionApproval = job.retention_full_count < 3
-      ? `<div class="muted">approved by ${escapeHtml(job.retention_approval_actor || "-")}</div>`
-      : "";
-    return `<tr>
+  populateTargetSelect($('job-target'));
+  $('jobs-table').innerHTML = store.jobs.length ? store.jobs.map((job) => `<tr>
     <td><strong>${escapeHtml(job.name)}</strong><div class="mono">${escapeHtml(shortId(job.id))}</div></td>
-    <td>${escapeHtml(job.target?.name || shortId(job.target_id))}<div class="muted">${escapeHtml(job.target?.database_name || "")}</div></td>
+    <td>${escapeHtml(job.target?.name || shortId(job.target_id))}<div class="muted">${escapeHtml(job.target?.database_name || '')}</div></td>
     <td><span class="mono">${escapeHtml(job.schedule_cron)}</span><div class="muted">${escapeHtml(cronLabel(job.schedule_cron))}</div></td>
-    <td>${escapeHtml(job.retention_full_count)} full${retentionApproval}</td>
-    <td>${statusBadge(job.enabled ? "enabled" : "disabled")}</td>
+    <td>${escapeHtml(job.retention_full_count)} full</td>
+    <td>${statusBadge(job.enabled ? 'enabled' : 'disabled')}</td>
     <td>${escapeHtml(formatDate(job.last_run_at))}</td>
     <td>
       <button class="button small secondary" type="button" data-run-job="${escapeHtml(job.id)}">Run</button>
-      <button class="button small secondary" type="button" data-toggle-job="${escapeHtml(job.id)}" data-enabled="${job.enabled ? "true" : "false"}">${job.enabled ? "Disable" : "Enable"}</button>
+      <button class="button small secondary" type="button" data-toggle-job="${escapeHtml(job.id)}" data-enabled="${job.enabled ? 'true' : 'false'}">${job.enabled ? 'Disable' : 'Enable'}</button>
     </td>
-  </tr>`;
-  }).join("") : `<tr><td colspan="7" class="muted">No schedules configured.</td></tr>`;
+  </tr>`).join('') : '<tr><td colspan="7" class="muted">No schedules configured.</td></tr>';
 
-  $("targets-list").innerHTML = store.targets.length ? store.targets.map((target) => `<article class="target-card">
+  $('targets-list').innerHTML = store.targets.length ? store.targets.map((target) => `<article class="target-card">
     <div>
       <h3>${escapeHtml(target.name)}</h3>
       <div class="meta-line">
-        <span>${escapeHtml(target.type || "postgres")}</span>
-        <span>${escapeHtml(sourceLabel(target.source_category || "postgres_database"))}</span>
-        <span>owner ${escapeHtml(target.service_owner || "unassigned")}</span>
-        <span>${escapeHtml(target.criticality || "standard")}</span>
+        <span>${escapeHtml(target.type || 'postgres')}</span>
+        <span>${escapeHtml(sourceLabel(target.source_category || 'postgres_database'))}</span>
+        <span>owner ${escapeHtml(target.service_owner || 'unassigned')}</span>
+        <span>${escapeHtml(target.criticality || 'standard')}</span>
         <span>${escapeHtml(target.host)}:${escapeHtml(target.port)}</span>
         <span>${escapeHtml(target.database_name)}</span>
-        <span>RPO ${escapeHtml(target.rpo_minutes ? `${target.rpo_minutes}m` : "-")}</span>
-        <span>RTO ${escapeHtml(target.rto_minutes ? `${target.rto_minutes}m` : "-")}</span>
+        <span>RPO ${escapeHtml(target.rpo_minutes ? `${target.rpo_minutes}m` : '-')}</span>
+        <span>RTO ${escapeHtml(target.rto_minutes ? `${target.rto_minutes}m` : '-')}</span>
       </div>
     </div>
-    <div>${statusBadge(target.enabled ? "enabled" : "disabled")}</div>
-  </article>`).join("") : `<div class="muted">No targets configured.</div>`;
+    <div>${statusBadge(target.enabled ? 'enabled' : 'disabled')}</div>
+  </article>`).join('') : '<div class="muted">No targets configured.</div>';
 }
 
 function renderRestore() {
-  populateTargetSelect($("restore-target"));
-  const successfulRuns = store.runs.filter((run) => run.status === "success");
-  $("backups-table").innerHTML = successfulRuns.length ? successfulRuns.map((run) => `<tr>
+  populateTargetSelect($('restore-target'));
+  const successfulRuns = store.runs.filter((run) => run.status === 'success');
+  $('backups-table').innerHTML = successfulRuns.length ? successfulRuns.map((run) => `<tr>
     <td class="mono">${escapeHtml(shortId(run.id))}</td>
     <td>${escapeHtml(run.job?.name || shortId(run.job_id))}</td>
     <td>${statusBadge(run.status)}</td>
-    <td>${verificationBadge(run)}<div class="muted">${escapeHtml(run.verification_reason || "")}</div></td>
+    <td>${verificationBadge(run)}<div class="muted">${escapeHtml(run.verification_reason || '')}</div></td>
     <td>${escapeHtml(formatDate(run.started_at))}</td>
-    <td>${escapeHtml(run.triggered_by || "-")}</td>
-    <td><button class="button small danger" type="button" data-restore-run="${escapeHtml(run.id)}">Restore</button></td>
-  </tr>`).join("") : `<tr><td colspan="7" class="muted">No successful backup runs found.</td></tr>`;
+    <td>${escapeHtml(run.triggered_by || '-')}</td>
+    <td><button class="button small secondary" type="button" data-restore-run="${escapeHtml(run.id)}">Restore</button></td>
+  </tr>`).join('') : '<tr><td colspan="7" class="muted">No successful backup runs found.</td></tr>';
 
-  $("restore-table").innerHTML = store.restores.length ? store.restores.map((request) => `<tr>
+  $('restore-table').innerHTML = store.restores.length ? store.restores.map((request) => `<tr>
     <td class="mono">${escapeHtml(shortId(request.id))}</td>
     <td>${escapeHtml(request.target?.name || shortId(request.target_id))}</td>
     <td>${statusBadge(request.status)}</td>
-    <td>${escapeHtml(request.target_environment || "production")}</td>
-    <td>${escapeHtml(request.approval_actor || "-")}<div class="muted">${escapeHtml(request.approval_reason || "")}</div></td>
-    <td>${escapeHtml(request.requested_by || "-")}</td>
+    <td>${escapeHtml(request.requested_by || '-')}</td>
     <td>${escapeHtml(formatDate(request.created_at))}</td>
-  </tr>`).join("") : `<tr><td colspan="7" class="muted">No restore requests found.</td></tr>`;
+  </tr>`).join('') : '<tr><td colspan="5" class="muted">No restore requests found.</td></tr>';
 }
 
 function populateTargetSelect(select) {
@@ -512,79 +527,83 @@ function renderEmptyStates(message = 'Waiting for authorized data.') {
 
 async function createJob(event) {
   event.preventDefault();
-  const retention = Number($("job-retention").value || 7);
-  const approvalActor = $("job-retention-approval-actor")?.value.trim();
-  const approvalReason = $("job-retention-approval-reason")?.value.trim();
-  if (retention < 3 && (!approvalActor || !approvalReason)) {
-    showNotice("Retention below three full backups requires approval actor and reason.", "error");
+  const retention = Number($('job-retention').value || 7);
+  const approvalActor = $('job-retention-approval-actor')?.value.trim();
+  const approvalReason = $('job-retention-approval-reason')?.value.trim();
+  if (retention < 3 && (!approvalActor || !approvalReason || approvalReason.length < 12)) {
+    showNotice('Retention below three full backups requires owner approval actor and reason.', 'error');
     return;
   }
   const body = {
-    name: $("job-name").value.trim(),
-    target_id: $("job-target").value,
-    schedule_cron: $("job-cron").value.trim(),
+    name: $('job-name').value.trim(),
+    target_id: $('job-target').value,
+    schedule_cron: $('job-cron').value.trim(),
     retention_full_count: retention,
     retention_approval_actor: retention < 3 ? approvalActor : undefined,
     retention_approval_reason: retention < 3 ? approvalReason : undefined,
-    storage_prefix: $("job-prefix").value.trim() || undefined,
+    storage_prefix: $('job-prefix').value.trim() || undefined,
   };
-  await api("/jobs", { method: "POST", body: JSON.stringify(body) });
-  $("job-form").reset();
-  $("job-retention").value = 7;
-  $("job-cron").value = "0 2 * * *";
-  $("job-form-panel").classList.add("hidden");
-  showNotice("Backup schedule created.");
+  await api('/jobs', { method: 'POST', body: JSON.stringify(body) });
+  $('job-form').reset();
+  $('job-retention').value = 7;
+  $('job-cron').value = '0 2 * * *';
+  $('job-form-panel').classList.add('hidden');
+  showNotice('Backup schedule created.');
   await loadPage();
 }
 
 async function createTarget(event) {
   event.preventDefault();
-  const retention = Number($("target-retention").value || 7);
-  const approvalActor = $("target-retention-approval-actor")?.value.trim();
-  const approvalReason = $("target-retention-approval-reason")?.value.trim();
-  if (retention < 3 && (!approvalActor || !approvalReason)) {
-    showNotice("Retention below three full backups requires approval actor and reason.", "error");
+  const retention = Number($('target-retention').value || 7);
+  const approvalActor = $('target-retention-approval-actor')?.value.trim();
+  const approvalReason = $('target-retention-approval-reason')?.value.trim();
+  if (retention < 3 && (!approvalActor || !approvalReason || approvalReason.length < 12)) {
+    showNotice('Retention below three full backups requires owner approval actor and reason.', 'error');
     return;
   }
   const targetBody = {
-    name: $("target-name").value.trim(),
-    host: $("target-host").value.trim(),
-    port: Number($("target-port").value || 5432),
-    database_name: $("target-database").value.trim(),
-    vault_secret_ref: $("target-secret").value.trim() || undefined,
-    service_owner: $("target-owner").value.trim() || undefined,
-    source_category: $("target-source-category").value,
-    criticality: $("target-criticality").value,
-    rpo_minutes: Number($("target-rpo").value || 0) || undefined,
-    rto_minutes: Number($("target-rto").value || 0) || undefined,
-    restore_class: $("target-restore-class").value,
-    kubernetes_namespace: $("target-namespace").value.trim() || undefined,
-    coverage_notes: $("target-notes").value.trim() || undefined,
+    source_category: $('target-source-category').value,
+    criticality: $('target-criticality').value,
+    rpo_minutes: Number($('target-rpo').value || 0) || undefined,
+    rto_minutes: Number($('target-rto').value || 0) || undefined,
+    restore_class: $('target-restore-class').value,
+    kubernetes_namespace: $('target-namespace').value.trim() || undefined,
+    name: $('target-name').value.trim(),
+    host: $('target-host').value.trim(),
+    port: Number($('target-port').value || 5432),
+    database_name: $('target-database').value.trim(),
+    vault_secret_ref: $('target-secret').value.trim() || undefined,
+    service_owner: $('target-owner').value.trim() || undefined,
+    coverage_notes: $('target-notes').value.trim() || undefined,
     enabled: true,
   };
-  const createdTarget = await api("/targets", { method: "POST", body: JSON.stringify(targetBody) });
-  const destination = $("target-destination").value || store.summary?.storage?.prefix || createdTarget.database_name;
-  await api("/jobs", {
-    method: "POST",
+  if (targetBody.source_category !== 'postgres_database') {
+    showNotice('This source category is contract-only in Goal 05. Create executable schedules only for PostgreSQL database targets.', 'error');
+    return;
+  }
+  const createdTarget = await api('/targets', { method: 'POST', body: JSON.stringify(targetBody) });
+  const destination = $('target-destination').value || store.summary?.storage?.prefix || createdTarget.database_name;
+  await api('/jobs', {
+    method: 'POST',
     body: JSON.stringify({
       target_id: createdTarget.id,
       name: `${createdTarget.name} daily backup`,
-      schedule_cron: $("target-cron").value,
+      schedule_cron: $('target-cron').value,
       retention_full_count: retention,
       retention_approval_actor: retention < 3 ? approvalActor : undefined,
       retention_approval_reason: retention < 3 ? approvalReason : undefined,
-      storage_prefix: `${destination.replace(/\/$/, "")}/${createdTarget.database_name}`,
+      storage_prefix: `${destination.replace(/\/$/, '')}/${createdTarget.database_name}`,
       enabled: true,
     }),
   });
-  $("target-form").reset();
-  $("target-port").value = 5432;
-  $("target-retention").value = 7;
-  $("target-cron").value = "0 2 * * *";
-  $("target-source-category").value = "postgres_database";
-  $("target-criticality").value = "standard";
-  $("target-restore-class").value = "logical_postgres";
-  showNotice("Backup target and schedule created.");
+  $('target-form').reset();
+  $('target-port').value = 5432;
+  $('target-retention').value = 7;
+  $('target-cron').value = '0 2 * * *';
+  $('target-source-category').value = 'postgres_database';
+  $('target-criticality').value = 'standard';
+  $('target-restore-class').value = 'logical_postgres';
+  showNotice('Backup target and schedule created.');
   await loadPage();
 }
 
@@ -607,24 +626,40 @@ async function createDestination(event) {
 
 async function submitRestore(event) {
   event.preventDefault();
-  const approvalActor = $("restore-approval-actor")?.value.trim();
-  const approvalReason = $("restore-approval-reason")?.value.trim();
-  if (!$("restore-confirm").checked || !approvalActor || !approvalReason) {
-    showNotice("Production restore requires approval confirmation, actor, and reason.", "error");
+  const runId = $('restore-run').value.trim();
+  const targetId = $('restore-target').value;
+  const confirmedRun = $('restore-confirm-run').value.trim();
+  const confirmedTarget = $('restore-confirm-target').value.trim();
+  const approvalActor = $('restore-approval-actor').value.trim();
+  const approvalReason = $('restore-approval-reason').value.trim();
+  if (!$('restore-confirm').checked) {
+    showNotice('Production restore approval confirmation is required before submitting a restore request.', 'error');
+    return;
+  }
+  if (confirmedRun !== runId || confirmedTarget !== targetId) {
+    showNotice('Restore confirmation must repeat the exact backup run ID and target ID.', 'error');
+    return;
+  }
+  if (!approvalActor || approvalReason.length < 12) {
+    showNotice('Restore approval actor and reason are required.', 'error');
     return;
   }
   const body = {
-    backup_run_id: $("restore-run").value,
-    target_id: $("restore-target").value,
-    target_environment: $("restore-environment").value || "production",
+    backup_run_id: runId,
+    target_id: targetId,
+    approval_confirmed_backup_run_id: confirmedRun,
+    approval_confirmed_target_id: confirmedTarget,
     approval_actor: approvalActor,
     approval_reason: approvalReason,
-    approval_confirmed: $("restore-confirm").checked,
+    production_restore_approved: true,
   };
-  await api("/restore", { method: "POST", body: JSON.stringify(body) });
-  $("restore-form-panel").classList.add("hidden");
-  $("restore-confirm").checked = false;
-  showNotice("Restore request submitted with approval evidence.");
+  await api('/restore', { method: 'POST', body: JSON.stringify(body) });
+  $('restore-form-panel').classList.add('hidden');
+  $('restore-confirm').checked = false;
+  $('restore-confirm-run').value = '';
+  $('restore-confirm-target').value = '';
+  $('restore-approval-reason').value = '';
+  showNotice('Restore request submitted.');
   await loadPage();
 }
 
@@ -651,6 +686,10 @@ document.addEventListener('click', async (event) => {
     }
     if (target.dataset.restoreRun) {
       $('restore-run').value = target.dataset.restoreRun;
+      $('restore-confirm-run').value = '';
+      $('restore-confirm-target').value = '';
+      $('restore-approval-actor').value = currentActorLabel();
+      $('restore-approval-reason').value = '';
       $('restore-form-panel').classList.remove('hidden');
       $('restore-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }

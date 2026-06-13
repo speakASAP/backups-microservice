@@ -1,12 +1,12 @@
 import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { Response } from 'express';
+import { DataSource } from 'typeorm';
 import { Public } from '../auth/roles.decorator';
 
 type ReadinessCheck = {
-  status: 'ready' | 'not_ready';
-  checked_at: string;
-  details?: Record<string, boolean | string>;
+  status: 'ready' | 'degraded' | 'not_ready';
+  message: string;
+  details?: Record<string, unknown>;
 };
 
 @Controller('health')
@@ -15,67 +15,99 @@ export class HealthController {
 
   @Public()
   @Get()
-  async health() {
-    const checks = await this.checks();
+  health() {
     return {
       success: true,
-      status: this.overallStatus(checks),
+      status: 'ok',
       timestamp: new Date().toISOString(),
       service: 'backups-microservice',
-      checks,
     };
   }
 
   @Public()
   @Get('readiness')
   async readiness(@Res({ passthrough: true }) response: Response) {
-    const checks = await this.checks();
-    const status = this.overallStatus(checks);
-    if (status !== 'ready') response.status(HttpStatus.SERVICE_UNAVAILABLE);
+    const [database, storage] = await Promise.all([
+      this.checkDatabase(),
+      this.checkStorage(),
+    ]);
+    const ready = database.status === 'ready' && storage.status === 'ready';
+
+    if (!ready) response.status(HttpStatus.SERVICE_UNAVAILABLE);
+
     return {
-      success: status === 'ready',
-      status,
+      success: ready,
+      status: ready ? 'ready' : 'degraded',
       timestamp: new Date().toISOString(),
       service: 'backups-microservice',
-      checks,
+      checks: {
+        database,
+        storage,
+      },
     };
   }
 
-  private async checks(): Promise<{ database: ReadinessCheck; storage: ReadinessCheck }> {
-    const [database, storage] = await Promise.all([this.databaseCheck(), this.storageCheck()]);
-    return { database, storage };
-  }
+  private async checkDatabase(): Promise<ReadinessCheck> {
+    if (!this.dataSource.isInitialized) {
+      return {
+        status: 'not_ready',
+        message: 'Database connection is not initialized',
+      };
+    }
 
-  private async databaseCheck(): Promise<ReadinessCheck> {
-    const checked_at = new Date().toISOString();
     try {
-      if (!this.dataSource.isInitialized) {
-        return { status: 'not_ready', checked_at, details: { initialized: false } };
-      }
       await this.dataSource.query('SELECT 1');
-      return { status: 'ready', checked_at, details: { initialized: true } };
-    } catch {
-      return { status: 'not_ready', checked_at, details: { initialized: this.dataSource.isInitialized } };
+      return {
+        status: 'ready',
+        message: 'Database connection is ready',
+      };
+    } catch (error) {
+      return {
+        status: 'not_ready',
+        message: 'Database connection is not ready',
+        details: {
+          error: this.sanitizeError(error),
+        },
+      };
     }
   }
 
-  private async storageCheck(): Promise<ReadinessCheck> {
-    const checked_at = new Date().toISOString();
-    const prefix = process.env.WALG_S3_PREFIX || '';
-    const endpoint = process.env.WALG_S3_ENDPOINT || process.env.MINIO_ENDPOINT || process.env.MINIO_SERVICE_URL || '';
+  private async checkStorage(): Promise<ReadinessCheck> {
     const bucket = process.env.MINIO_BUCKET || process.env.MINIO_BACKUP_BUCKET || '';
-    const details = {
-      prefix_configured: prefix.startsWith('s3://'),
-      endpoint_configured: Boolean(endpoint),
-      bucket_configured: Boolean(bucket),
-      credentials_referenced: Boolean(process.env.MINIO_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID)
-        && Boolean(process.env.MINIO_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY),
+    const prefix = process.env.WALG_S3_PREFIX || '';
+    const endpointConfigured = Boolean(
+      process.env.WALG_S3_ENDPOINT
+      || process.env.MINIO_ENDPOINT
+      || process.env.MINIO_SERVICE_URL,
+    );
+    const prefixConfigured = Boolean(prefix);
+    const bucketConfigured = Boolean(bucket);
+
+    if (!endpointConfigured || (!prefixConfigured && !bucketConfigured)) {
+      return {
+        status: 'not_ready',
+        message: 'Storage configuration is incomplete',
+        details: {
+          endpoint_configured: endpointConfigured,
+          prefix_configured: prefixConfigured,
+          bucket_configured: bucketConfigured,
+        },
+      };
+    }
+
+    return {
+      status: 'ready',
+      message: 'Storage configuration is present',
+      details: {
+        endpoint_configured: true,
+        prefix_configured: prefixConfigured,
+        bucket_configured: bucketConfigured,
+      },
     };
-    const ready = details.prefix_configured && details.endpoint_configured && details.bucket_configured;
-    return { status: ready ? 'ready' : 'not_ready', checked_at, details };
   }
 
-  private overallStatus(checks: { database: ReadinessCheck; storage: ReadinessCheck }) {
-    return Object.values(checks).every((check) => check.status === 'ready') ? 'ready' : 'degraded';
+  private sanitizeError(error: unknown): string {
+    if (!(error instanceof Error)) return 'unknown error';
+    return error.message.replace(/(password|token|secret|key)=([^\s]+)/gi, '$1=[redacted]');
   }
 }
