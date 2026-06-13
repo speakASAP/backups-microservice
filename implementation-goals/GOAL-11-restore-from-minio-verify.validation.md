@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G11
-status: passed-not-deployed
+status: passed-and-deployed
 validated_artifact: implementation-goals/GOAL-11-restore-from-minio-verify.md
 owner: validator
 created: 2026-06-13
@@ -24,10 +24,14 @@ last_updated: 2026-06-13
 - `bash -n scripts/smoke-test.sh`: passed.
 - `git diff --check`: passed.
 
+## Deployment Evidence
+
+- Production deployment completed on 2026-06-13 as part of the approved combined schema/nightly/schedule/restore rollout. Image `localhost:5000/backups-microservice:fc8c225f` rolled out in namespace `statex-apps`; health, readiness, and full smoke passed. No restore was executed during deployment validation.
+
 ## Backup Safety Evidence
 
 No restore was executed during validation. Production restore approval fields remain required. Backup-run deletion remains disabled. Raw WAL-G output remains excluded from public restore responses.
 
 ## Recommendation
 
-Ready for review and deployment as part of the approved combined deployment. Production restore execution should still require an explicit operator-created restore request with exact target/run confirmation.
+Deployed successfully as part of the approved combined deployment. Production restore execution should still require an explicit operator-created restore request with exact target/run confirmation.

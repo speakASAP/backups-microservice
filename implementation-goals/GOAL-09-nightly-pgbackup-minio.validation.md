@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G9
-status: passed-not-deployed
+status: passed-and-deployed
 validated_artifact: implementation-goals/GOAL-09-nightly-pgbackup-minio.md
 owner: validator
 created: 2026-06-13
@@ -24,6 +24,10 @@ last_updated: 2026-06-13
 - `bash -n scripts/smoke-test.sh`: passed.
 - `git diff --check`: passed.
 
+## Deployment Evidence
+
+- Production deployment completed on 2026-06-13 as part of the approved combined schema/nightly/schedule/restore rollout. Image `localhost:5000/backups-microservice:fc8c225f` rolled out in namespace `statex-apps`; startup metadata bootstrap is live and full smoke passed. No manual backup was triggered during deployment validation.
+
 ## Backup Safety Evidence
 
 - Startup creates scheduler metadata only; it does not trigger backup execution.
@@ -33,4 +37,4 @@ last_updated: 2026-06-13
 
 ## Recommendation
 
-Ready for review. Deploy after deciding whether production should automatically create/enable the default nightly job from the configured environment.
+Deployed after owner approval with startup metadata bootstrap enabled.
