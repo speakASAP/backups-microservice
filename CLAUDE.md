@@ -1,3 +1,18 @@
+# Claude Instructions
+
+Shared rules live here:
+
+- Claude profile: `/home/ssf/.claude/CLAUDE.md`
+- Shared ecosystem instructions: `/home/ssf/Documents/Github/CLAUDE.md`
+- Codex profile: `/home/ssf/.codex/AGENTS.md`
+- Cross-agent standard: `/home/ssf/.ai-agent-standards/CROSS_AGENT_AUTOMATION_STANDARD.md`
+- Repository operations: `AGENT_OPERATIONS.md`
+
+Read those first, then follow the repository-specific notes below and the current planning/status files.
+
+
+## Repository-Specific Notes
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -16,7 +31,6 @@ kubectl -n statex-apps exec deployment/backups-microservice -- curl -s -X POST h
   -H "Authorization: Bearer $(cat ~/.claude/rag-token)" \
   -d '{"query": "YOUR QUESTION HERE", "maxTokens": 3000}'
 ```
-
 
 ---
 
