@@ -35,3 +35,7 @@
 - [x] Deploy restore verification hardening after owner approval
 - [x] Revalidate `BAK-G4` restore verification evidence on `main` after owner request
 - [ ] Select or define the next roadmap goal (`BAK-G14`) before further implementation
+
+## Project Completion Marker
+
+- 2026-06-21: Project marked completed/frozen after remote inventory. There are no active goals, active plans, open tasks, blockers, or pending human/AI actions. Do not ask for a new goal during routine status checks unless the owner explicitly creates one.
