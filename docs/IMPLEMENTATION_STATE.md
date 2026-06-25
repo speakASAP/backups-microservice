@@ -5,6 +5,7 @@ Last updated: 2026-06-25.
 ## Orchestrator Command
 
 ```text
+2026-06-25: Deployed BAK-G15 disaster recovery catalog UI after owner approval. Branch `codex/backups-phase1-catalog-support` was pushed, fast-forward merged into `main`, and `main` was pushed. Deployment image `localhost:5000/backups-microservice:5365c98f` rolled out successfully. Validation: deploy build and rollout passed; health/readiness passed; unauthenticated `/jobs` rejected with `401`; authenticated smoke passed for dashboard summary, jobs list, targets list, and recent backup runs; live `/dashboard/summary` returned catalog status `success`, 12 payload families, 5 missing lanes, and `contains_backup_secret_path=false`. No backup payload move/delete/copy, restore, schedule change, mount/remount, or secret exposure was performed.
 BACKUPS ORCHESTRATOR: continue implementation
 ```
 
@@ -23,9 +24,9 @@ BACKUPS ORCHESTRATOR: implement goal number N
 ## Current Status
 
 - Active goal: none
-- Active branch: `codex/backups-phase1-catalog-support`
+- Active branch: `main`
 - Current wave: Roadmap complete through Goal 15; deployment pending owner approval
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI, 15 Disaster Recovery Catalog UI
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI, 15 Disaster Recovery Catalog UI, 15 Disaster Recovery Catalog UI
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -37,7 +38,7 @@ BACKUPS ORCHESTRATOR: implement goal number N
 - Project invariants: `docs/process/PROJECT_INVARIANTS.md`
 - Process gates: `docs/process/OPERATIONAL_GATES.md`
 - Branch workflow: `docs/orchestration/branch-workflow.md`
-- Deployment status: deployed after owner instruction; image `localhost:5000/backups-microservice:cb06ec77`; full smoke passed for notification/logging rollout
+- Deployment status: deployed after owner instruction; image `localhost:5000/backups-microservice:5365c98f`; authenticated smoke passed for BAK-G15 disaster recovery catalog rollout
 - Commit policy: do not commit or push unless the owner explicitly asks
 
 ## Goal Roadmap

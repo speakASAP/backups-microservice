@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-15
-status: passed
+status: deployed
 validated_artifact: implementation-goals/GOAL-15-disaster-recovery-catalog-ui.md
 owner: validator
 created: 2026-06-25
