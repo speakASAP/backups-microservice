@@ -131,8 +131,10 @@ function sourceLabel(value) {
     pvc: 'Persistent volume',
     service: 'Service',
     vault_secrets: 'Vault secrets',
+    disaster_recovery_catalog: 'Disaster recovery catalog',
     kubernetes_logical_export: 'Kubernetes logical export',
     vault_snapshot: 'Vault snapshot',
+    alfares_disaster_recovery_catalog: 'Alfares DR catalog',
     logical_postgres: 'Logical PostgreSQL restore',
     object_restore: 'Object restore',
     manifest_reapply: 'Manifest reapply',
@@ -359,6 +361,12 @@ function renderExternalEvidence(evidence) {
     }),
   ];
   list.innerHTML = cards.join('');
+  renderCatalogEvidence(evidence.disaster_recovery_catalog || {
+    source: 'disaster-recovery-catalog',
+    source_category: 'disaster_recovery_catalog',
+    status: 'missing',
+    reason: 'Disaster recovery catalog evidence manifest is not configured.',
+  });
 }
 
 function renderEvidenceCard(title, evidence) {
@@ -389,6 +397,108 @@ function renderEvidenceCard(title, evidence) {
       <p class="muted">${escapeHtml(evidence.secret_policy || 'Evidence only; secret values are not exposed.')}</p>
     </div>
     <div>${statusBadge(evidence.status || (evidence.available ? 'success' : 'missing'))}</div>
+  </article>`;
+}
+
+function renderCatalogEvidence(catalog) {
+  const panel = $('catalog-evidence-panel');
+  if (!panel) return;
+  const families = Array.isArray(catalog.payload_families) ? catalog.payload_families : [];
+  const missingLanes = Array.isArray(catalog.missing_or_awaiting_manifest_lanes)
+    ? catalog.missing_or_awaiting_manifest_lanes
+    : [];
+  const mounts = Array.isArray(catalog.mounts) ? catalog.mounts : [];
+  const safety = catalog.safety_policy || {};
+
+  if (!catalog.available) {
+    panel.innerHTML = `<article class="catalog-summary">
+      <div>
+        <h3>Disaster recovery catalog</h3>
+        <p class="muted">${escapeHtml(catalog.reason || 'No disaster recovery catalog evidence is available yet.')}</p>
+        <p class="muted">${escapeHtml(catalog.secret_policy || 'Evidence only; secret values are not exposed.')}</p>
+      </div>
+      <div>${statusBadge(catalog.status || 'missing')}</div>
+    </article>`;
+    return;
+  }
+
+  const mountText = mounts.length
+    ? mounts.map((mount) => `${mount.path || '-'} ${mount.device || ''} ${mount.status || 'unknown'}`.trim()).join(', ')
+    : 'No mount evidence published.';
+  const safetyFlags = [
+    ['raw payloads', safety.raw_payload_contents_included],
+    ['secret values', safety.secret_values_included],
+    ['Kubernetes Secret data', safety.kubernetes_secret_data_included],
+    ['encrypted contents', safety.encrypted_archive_contents_included],
+    ['destructive actions', safety.destructive_actions_performed],
+    ['schedule or mount changes', safety.schedule_or_mount_changes_performed],
+  ];
+
+  panel.innerHTML = `<div class="catalog-block">
+    <article class="catalog-summary">
+      <div>
+        <h3>Disaster recovery catalog</h3>
+        <div class="meta-line">
+          <span>${escapeHtml(sourceLabel(catalog.backup_type || catalog.source_category))}</span>
+          <span>generated ${escapeHtml(formatDate(catalog.generated_at))}</span>
+          <span>manifest ${escapeHtml(catalog.manifest_path || '-')}</span>
+        </div>
+        <div class="meta-line">
+          <span>payload families ${escapeHtml(catalog.payload_family_count ?? families.length)}</span>
+          <span>missing lanes ${escapeHtml(catalog.missing_lane_count ?? missingLanes.length)}</span>
+          <span>schema ${escapeHtml(catalog.schema_version || '-')}</span>
+        </div>
+        <p class="muted">${escapeHtml(catalog.secret_policy || 'Sanitized catalog metadata only.')}</p>
+        <p class="muted">Mount evidence: ${escapeHtml(mountText)}</p>
+        <div class="meta-line">
+          ${safetyFlags.map(([label, value]) => `<span>${escapeHtml(label)} ${value ? statusBadge('included') : statusBadge('excluded')}</span>`).join('')}
+        </div>
+      </div>
+      <div>${statusBadge(catalog.status || 'success')}</div>
+    </article>
+    <div class="section-label">Catalog families</div>
+    <div class="catalog-grid">
+      ${families.length ? families.map(renderCatalogFamily).join('') : '<div class="muted">No catalog families are published.</div>'}
+    </div>
+    <div class="section-label">Missing or awaiting-manifest lanes</div>
+    <div class="catalog-grid compact">
+      ${missingLanes.length ? missingLanes.map(renderMissingCatalogLane).join('') : '<div class="muted">No missing lanes are published.</div>'}
+    </div>
+  </div>`;
+}
+
+function renderCatalogFamily(family) {
+  const evidence = family.known_evidence || {};
+  return `<article class="catalog-card">
+    <div>
+      <h3>${escapeHtml(family.family || family.id || 'Catalog family')}</h3>
+      <div class="meta-line">
+        <span>${escapeHtml(family.category || '-')}</span>
+        <span>owner ${escapeHtml(family.owner || '-')}</span>
+        <span>decision ${escapeHtml(family.decision || '-')}</span>
+      </div>
+      <div class="meta-line">
+        <span>source <span class="mono">${escapeHtml(family.current_path || '-')}</span></span>
+        <span>target <span class="mono">${escapeHtml(family.target_state || '-')}</span></span>
+      </div>
+      <div class="meta-line">
+        <span>restore ${escapeHtml(family.restore_verification_status || '[UNKNOWN]')}</span>
+        <span>checksum ${escapeHtml(family.checksum_status || '[UNKNOWN]')}</span>
+        <span>manifest ${escapeHtml(evidence.manifest_status || '-')}</span>
+      </div>
+      <p class="muted">${escapeHtml(family.allowed_next_action || '[UNKNOWN: no next action recorded]')}</p>
+      ${evidence.evidence_manifest ? `<p class="muted">Evidence manifest: <span class="mono">${escapeHtml(evidence.evidence_manifest)}</span></p>` : ''}
+    </div>
+  </article>`;
+}
+
+function renderMissingCatalogLane(lane) {
+  return `<article class="catalog-card compact">
+    <div>
+      <h3>${escapeHtml(lane.id || 'missing-lane')}</h3>
+      <p class="muted">${escapeHtml(lane.reason || '[UNKNOWN: missing lane reason]')}</p>
+    </div>
+    <div>${statusBadge(lane.state || 'unknown')}</div>
   </article>`;
 }
 

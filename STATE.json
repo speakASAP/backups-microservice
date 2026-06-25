@@ -23,7 +23,8 @@
     "BAK-G11 restore from MinIO and verify",
     "BAK-G12 NotificationsModule integration",
     "BAK-G13 LoggingModule integration",
-    "BAK-G14 durability evidence UI"
+    "BAK-G14 durability evidence UI",
+    "BAK-G15 disaster recovery catalog UI"
   ],
   "next_goal": null,
   "orchestrator": {
@@ -32,12 +33,12 @@
     "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
     "goal_index": "implementation-goals/README.md"
   },
-  "notes": "Goal 04 restore verification evidence was revalidated on main on 2026-06-13 with build, full Jest suite, admin JS syntax, and diff checks passing. Goals 01-14 are complete. BAK-G14 is fully closed after the parallel Vault worker delivered sanitized runtime evidence, so no numbered roadmap goal is currently ready to implement without a new owner-selected goal.",
-  "project_status": "completed_frozen",
-  "next_focus": "No tasks left.",
+  "notes": "Goal 04 restore verification evidence was revalidated on main on 2026-06-13 with build, full Jest suite, admin JS syntax, and diff checks passing. Goals 01-15 are complete. BAK-G15 adds sanitized Phase 0 disaster-recovery catalog API/UI support on codex/backups-phase1-catalog-support; deployment remains pending owner approval.",
+  "project_status": "implemented_pending_deploy",
+  "next_focus": "Owner review and deployment approval for BAK-G15 disaster recovery catalog UI.",
   "open_task_ids": [],
   "blockers": [],
   "completed_at": "2026-06-25",
-  "frozen_at": "2026-06-25",
+  "frozen_at": null,
   "updated_at": "2026-06-25"
 }
