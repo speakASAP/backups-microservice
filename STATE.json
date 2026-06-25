@@ -22,9 +22,10 @@
     "BAK-G10 configurable cron schedule policies",
     "BAK-G11 restore from MinIO and verify",
     "BAK-G12 NotificationsModule integration",
-    "BAK-G13 LoggingModule integration"
+    "BAK-G13 LoggingModule integration",
+    "BAK-G14 durability evidence UI"
   ],
-  "next_goal": "Owner selection of a new Goal 14 or explicit conversion of an open decision into an implementation goal",
+  "next_goal": "Wait for Vault worker to write sanitized latest.json, then recheck frontend Vault evidence status",
   "orchestrator": {
     "entrypoint": "AGENTS.md",
     "state": "docs/IMPLEMENTATION_STATE.md",
@@ -32,11 +33,13 @@
     "goal_index": "implementation-goals/README.md"
   },
   "notes": "Goal 04 restore verification evidence was revalidated on main on 2026-06-13 with build, full Jest suite, admin JS syntax, and diff checks passing. Goals 01-13 are complete; no numbered roadmap goal is currently ready to implement without owner selection.",
-  "project_status": "completed_frozen",
-  "next_focus": "Project completed/frozen: no active goals, plans, tasks, blockers, or human/AI actions pending as of 2026-06-21.",
+  "project_status": "completed_with_vault_evidence_pending",
+  "next_focus": "Vault evidence slot is deployed and visible; database evidence is live. Vault worker owns writing /home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json.",
   "open_task_ids": [],
-  "blockers": [],
+  "blockers": [
+    "[MISSING: sanitized Vault latest.json from parallel Vault backup worker]"
+  ],
   "completed_at": "2026-06-21",
   "frozen_at": "2026-06-21",
-  "updated_at": "2026-06-21"
+  "updated_at": "2026-06-25"
 }

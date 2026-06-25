@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as fs from 'fs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BackupRun, BackupRunStatus, VerificationStatus } from '../backup/entities/backup-run.entity';
@@ -93,6 +94,7 @@ export class DashboardService {
       },
       destinations,
       coverage_stats: this.coverageStats(targets, protectedTargets, unprotectedDiscoveredSources),
+      external_evidence: this.externalEvidence(),
       unprotected_discovered_sources: unprotectedDiscoveredSources,
       source_contracts: this.sourceContracts(),
       coverage: targets.map((target) => {
@@ -154,6 +156,7 @@ export class DashboardService {
       { source_category: 'kubernetes_resource', restore_class: 'manifest_reapply', execution_status: 'contract_only', credential_policy: 'Manifest metadata only; secret values remain owned by Vault/ESO' },
       { source_category: 'secret_reference', restore_class: 'secret_rehydration', execution_status: 'contract_only', credential_policy: 'References only; no secret values, private keys, or tokens' },
       { source_category: 'pvc', restore_class: 'volume_restore', execution_status: 'contract_only', credential_policy: 'Volume metadata and runbook references only' },
+      { source_category: 'vault_secrets', restore_class: 'secret_rehydration', execution_status: 'evidence_slot', credential_policy: 'Sanitized manifest only; no Vault keys, tokens, or secret values' },
     ];
   }
 
@@ -197,5 +200,106 @@ export class DashboardService {
       default_schedule: process.env.BACKUP_SCHEDULE_DB || null,
       default_retention_days: process.env.BACKUP_RETENTION_DAYS || null,
     };
+  }
+
+
+  private externalEvidence() {
+    return {
+      database_server: this.readJsonEvidence(
+        'database-server',
+        process.env.DATABASE_SERVER_BACKUP_EVIDENCE_PATH || '/var/lib/backups-evidence/database-server/latest.json',
+      ),
+      vault: this.readVaultEvidence(),
+    };
+  }
+
+  private readVaultEvidence() {
+    const jsonPath = process.env.VAULT_BACKUP_EVIDENCE_PATH || '/var/lib/backups-evidence/vault/latest.json';
+    const jsonEvidence = this.readJsonEvidence('vault', jsonPath);
+    if (jsonEvidence.available) return jsonEvidence;
+
+    const legacyPath = process.env.VAULT_BACKUP_MANIFEST_PATH;
+    if (!legacyPath) {
+      return {
+        source: 'vault',
+        source_category: 'vault_secrets',
+        available: false,
+        status: 'awaiting_manifest',
+        manifest_path: jsonPath,
+        reason: jsonEvidence.reason,
+      };
+    }
+
+    try {
+      if (!fs.existsSync(legacyPath)) {
+        return {
+          source: 'vault',
+          source_category: 'vault_secrets',
+          available: false,
+          status: 'missing',
+          manifest_path: legacyPath,
+          reason: 'Vault backup manifest is not present.',
+        };
+      }
+      const lines = fs.readFileSync(legacyPath, 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line && !line.startsWith('#'));
+      const latest = lines[lines.length - 1] || '';
+      return {
+        source: 'vault',
+        source_category: 'vault_secrets',
+        backup_type: 'vault_snapshot',
+        available: Boolean(latest),
+        status: latest ? 'success' : 'unknown',
+        manifest_path: legacyPath,
+        latest_entry: latest || null,
+        secret_policy: 'Vault manifest status only; secret values, unseal keys, tokens, and backup payloads are never exposed.',
+      };
+    } catch (error) {
+      return {
+        source: 'vault',
+        source_category: 'vault_secrets',
+        available: false,
+        status: 'error',
+        manifest_path: legacyPath,
+        reason: error instanceof Error ? error.message : 'Unable to read Vault backup evidence.',
+      };
+    }
+  }
+
+  private readJsonEvidence(source: string, manifestPath: string) {
+    try {
+      if (!fs.existsSync(manifestPath)) {
+        return { source, available: false, status: 'missing', manifest_path: manifestPath, reason: 'Evidence manifest is not present.' };
+      }
+      const parsed = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      return {
+        source,
+        source_category: parsed.source_category || (source === 'vault' ? 'vault_secrets' : 'postgres_database'),
+        backup_type: parsed.backup_type || 'external_manifest',
+        available: true,
+        status: parsed.status || 'unknown',
+        generated_at: parsed.generated_at || null,
+        backup_timestamp: parsed.backup_timestamp || null,
+        database_count: parsed.database_count || 0,
+        databases: Array.isArray(parsed.databases) ? parsed.databases.slice(0, 120) : [],
+        artifact_count: parsed.artifact_count || 0,
+        artifacts: Array.isArray(parsed.artifacts) ? parsed.artifacts.map((artifact) => ({
+          name: artifact.name,
+          kind: artifact.kind,
+          size_bytes: artifact.size_bytes,
+        })) : [],
+        storage: parsed.storage ? {
+          backup_dir: parsed.storage.backup_dir,
+          run_dir: parsed.storage.run_dir,
+          retention_days: parsed.storage.retention_days,
+        } : null,
+        manifest_path: manifestPath,
+        secret_policy: parsed.secret_policy || 'Evidence manifest is sanitized before UI display.',
+      };
+    } catch (error) {
+      return { source, available: false, status: 'error', manifest_path: manifestPath, reason: error instanceof Error ? error.message : 'Unable to read evidence manifest.' };
+    }
   }
 }
