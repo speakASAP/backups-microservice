@@ -90,6 +90,15 @@ function shortId(value) {
   return value ? `${String(value).slice(0, 12)}` : '-';
 }
 
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (!Number.isFinite(bytes) || bytes <= 0) return '-';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const amount = bytes / (1024 ** index);
+  return `${amount.toFixed(amount >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;',
@@ -121,6 +130,9 @@ function sourceLabel(value) {
     secret_reference: 'Secret reference',
     pvc: 'Persistent volume',
     service: 'Service',
+    vault_secrets: 'Vault secrets',
+    kubernetes_logical_export: 'Kubernetes logical export',
+    vault_snapshot: 'Vault snapshot',
     logical_postgres: 'Logical PostgreSQL restore',
     object_restore: 'Object restore',
     manifest_reapply: 'Manifest reapply',
@@ -242,6 +254,7 @@ function renderDashboard() {
 
   renderCoverageStats(summary.coverage_stats || []);
   renderSettings(summary.storage || {}, summary.guardrails || {});
+  renderExternalEvidence(summary.external_evidence || {});
   renderDiscovery(store.discovery || {});
   renderDestinations(summary.storage || {});
   renderSourceContracts(summary.source_contracts || []);
@@ -325,6 +338,58 @@ function renderSettings(storage, guardrails) {
   $('settings-list').innerHTML = values.map(([label, value]) => {
     return `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value ?? '-')}</dd></div>`;
   }).join('');
+}
+
+
+function renderExternalEvidence(evidence) {
+  const list = $('external-evidence-list');
+  if (!list) return;
+  const cards = [
+    renderEvidenceCard('Database disk backup', evidence.database_server || {
+      source: 'database-server',
+      source_category: 'postgres_database',
+      status: 'missing',
+      reason: 'Database evidence manifest is not configured.',
+    }),
+    renderEvidenceCard('Vault backup', evidence.vault || {
+      source: 'vault',
+      source_category: 'vault_secrets',
+      status: 'awaiting_manifest',
+      reason: 'Vault evidence manifest is not configured.',
+    }),
+  ];
+  list.innerHTML = cards.join('');
+}
+
+function renderEvidenceCard(title, evidence) {
+  const artifacts = Array.isArray(evidence.artifacts) ? evidence.artifacts : [];
+  const databases = Array.isArray(evidence.databases) ? evidence.databases : [];
+  const artifactText = artifacts.length
+    ? artifacts.map((artifact) => `${artifact.kind || 'artifact'} ${formatBytes(artifact.size_bytes)}`).join(', ')
+    : evidence.latest_entry || evidence.reason || 'No artifact evidence yet.';
+  const dbPreview = databases.length
+    ? `<p class="muted">Databases: ${escapeHtml(databases.slice(0, 18).join(', '))}${databases.length > 18 ? ` and ${databases.length - 18} more` : ''}</p>`
+    : '';
+  return `<article class="evidence-card">
+    <div>
+      <h3>${escapeHtml(title)}</h3>
+      <div class="meta-line">
+        <span>${escapeHtml(sourceLabel(evidence.source_category || evidence.source))}</span>
+        <span>${escapeHtml(sourceLabel(evidence.backup_type || 'external_manifest'))}</span>
+        <span>generated ${escapeHtml(formatDate(evidence.generated_at))}</span>
+        <span>manifest ${escapeHtml(evidence.manifest_path || '-')}</span>
+      </div>
+      <div class="meta-line">
+        <span>databases ${escapeHtml(evidence.database_count ?? databases.length ?? '-')}</span>
+        <span>artifacts ${escapeHtml(evidence.artifact_count ?? artifacts.length ?? '-')}</span>
+        <span>retention ${escapeHtml(evidence.storage?.retention_days ?? '-')}</span>
+      </div>
+      <p class="muted">${escapeHtml(artifactText)}</p>
+      ${dbPreview}
+      <p class="muted">${escapeHtml(evidence.secret_policy || 'Evidence only; secret values are not exposed.')}</p>
+    </div>
+    <div>${statusBadge(evidence.status || (evidence.available ? 'success' : 'missing'))}</div>
+  </article>`;
 }
 
 function renderDiscovery(discovery) {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Backups Admin - Dashboard</title>
-  <link rel="stylesheet" href="/admin/styles.css?v=backup-targets-20260612">
+  <link rel="stylesheet" href="/admin/styles.css?v=evidence-ui-20260625">
 </head>
 <body>
   <header class="topbar">
@@ -62,6 +62,19 @@
         <span>Latest status</span>
         <strong id="metric-latest">-</strong>
       </article>
+    </section>
+
+
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Disk backup evidence</h2>
+          <p>Read-only manifests for database exports and Vault recovery coverage. The UI never displays dump contents, passwords, tokens, keys, or secret values.</p>
+        </div>
+        <span class="badge neutral">manifest only</span>
+      </div>
+      <div id="external-evidence-list" class="evidence-list"></div>
     </section>
 
     <section class="panel discovery-panel">
@@ -265,6 +278,6 @@
     </section>
   </main>
 
-  <script src="/admin/app.js?v=backup-targets-20260612"></script>
+  <script src="/admin/app.js?v=evidence-ui-20260625"></script>
 </body>
 </html>

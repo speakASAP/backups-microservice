@@ -33,11 +33,23 @@ spec:
           ports:
             - containerPort: 3398
               name: http
+          env:
+            - name: DATABASE_SERVER_BACKUP_EVIDENCE_PATH
+              value: /var/lib/backups-evidence/database-server/latest.json
+            - name: VAULT_BACKUP_EVIDENCE_PATH
+              value: /var/lib/backups-evidence/vault/latest.json
           envFrom:
             - configMapRef:
                 name: backups-microservice-config
             - secretRef:
                 name: backups-microservice-secret
+          volumeMounts:
+            - name: database-server-evidence
+              mountPath: /var/lib/backups-evidence/database-server
+              readOnly: true
+            - name: vault-evidence
+              mountPath: /var/lib/backups-evidence/vault
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health
@@ -67,3 +79,12 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+      volumes:
+        - name: database-server-evidence
+          hostPath:
+            path: /home/ssf/Documents/Github/database-server/backup-evidence
+            type: DirectoryOrCreate
+        - name: vault-evidence
+          hostPath:
+            path: /home/ssf/Documents/Github/shared/runtime-evidence/vault-backups
+            type: DirectoryOrCreate

@@ -34,7 +34,8 @@
 
 - [x] Deploy restore verification hardening after owner approval
 - [x] Revalidate `BAK-G4` restore verification evidence on `main` after owner request
-- [ ] Select or define the next roadmap goal (`BAK-G14`) before further implementation
+- [x] Select or define the next roadmap goal (`BAK-G14`) before further implementation
+- [x] `BAK-G14` Show sanitized database and Vault durability evidence in the frontend
 
 ## Project Completion Marker
 
