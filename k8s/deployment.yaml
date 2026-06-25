@@ -38,6 +38,8 @@ spec:
               value: /var/lib/backups-evidence/database-server/latest.json
             - name: VAULT_BACKUP_EVIDENCE_PATH
               value: /var/lib/backups-evidence/vault/latest.json
+            - name: DISASTER_RECOVERY_CATALOG_PATH
+              value: /var/lib/backups-evidence/disaster-recovery/latest.json
           envFrom:
             - configMapRef:
                 name: backups-microservice-config
@@ -49,6 +51,9 @@ spec:
               readOnly: true
             - name: vault-evidence
               mountPath: /var/lib/backups-evidence/vault
+              readOnly: true
+            - name: disaster-recovery-evidence
+              mountPath: /var/lib/backups-evidence/disaster-recovery
               readOnly: true
           startupProbe:
             httpGet:
@@ -87,4 +92,8 @@ spec:
         - name: vault-evidence
           hostPath:
             path: /home/ssf/Documents/Github/shared/runtime-evidence/vault-backups
+            type: DirectoryOrCreate
+        - name: disaster-recovery-evidence
+          hostPath:
+            path: /home/ssf/Documents/Github/shared/runtime-evidence/disaster-recovery
             type: DirectoryOrCreate

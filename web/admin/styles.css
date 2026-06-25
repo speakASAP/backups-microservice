@@ -302,6 +302,7 @@ h2 {
 .target-grid,
 .service-list,
 .evidence-list,
+.catalog-grid,
 .destination-list {
   display: grid;
   gap: 10px;
@@ -312,6 +313,8 @@ h2 {
 .target-card,
 .service-card,
 .evidence-card,
+.catalog-card,
+.catalog-summary,
 .destination-card {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -360,6 +363,8 @@ h2 {
 .target-card h3,
 .service-card h3,
 .evidence-card h3,
+.catalog-card h3,
+.catalog-summary h3,
 .destination-card h3,
 .stack-form h3 {
   margin: 0 0 6px;
@@ -370,6 +375,37 @@ h2 {
 .evidence-list,
 .destination-list {
   padding: 0;
+}
+
+.catalog-evidence-panel {
+  padding: 0 14px 14px;
+}
+
+.catalog-block {
+  display: grid;
+  gap: 12px;
+}
+
+.catalog-summary {
+  background: #f7fbff;
+}
+
+.catalog-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  padding: 0;
+}
+
+.catalog-grid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.catalog-card {
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+
+.catalog-card.compact {
+  grid-template-columns: 1fr auto;
 }
 
 .service-list.compact {

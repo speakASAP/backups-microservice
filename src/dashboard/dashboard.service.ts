@@ -209,7 +209,136 @@ export class DashboardService {
         'database-server',
         process.env.DATABASE_SERVER_BACKUP_EVIDENCE_PATH || '/var/lib/backups-evidence/database-server/latest.json',
       ),
+      disaster_recovery_catalog: this.readDisasterRecoveryCatalog(
+        process.env.DISASTER_RECOVERY_CATALOG_PATH || '/var/lib/backups-evidence/disaster-recovery/latest.json',
+      ),
       vault: this.readVaultEvidence(),
+    };
+  }
+
+  private readDisasterRecoveryCatalog(manifestPath: string) {
+    try {
+      if (!fs.existsSync(manifestPath)) {
+        return {
+          source: 'disaster-recovery-catalog',
+          source_category: 'disaster_recovery_catalog',
+          backup_type: 'alfares_disaster_recovery_catalog',
+          available: false,
+          status: 'missing',
+          manifest_path: manifestPath,
+          reason: 'Disaster recovery catalog evidence manifest is not present.',
+          secret_policy: 'Catalog evidence only; secret values, Kubernetes Secret data, dump contents, and encrypted archive contents are not exposed.',
+        };
+      }
+
+      const parsed = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const payloadFamilies = Array.isArray(parsed.payload_families) ? parsed.payload_families : [];
+      const missingLanes = Array.isArray(parsed.missing_or_awaiting_manifest_lanes)
+        ? parsed.missing_or_awaiting_manifest_lanes
+        : [];
+      const mounts = Array.isArray(parsed.mounts) ? parsed.mounts : [];
+
+      return {
+        source: 'disaster-recovery-catalog',
+        source_category: 'disaster_recovery_catalog',
+        backup_type: parsed.artifact || 'alfares_disaster_recovery_catalog',
+        available: true,
+        status: parsed.schema_version ? 'success' : 'unknown',
+        generated_at: parsed.generated_at || null,
+        generator: parsed.generator || null,
+        schema_version: parsed.schema_version || null,
+        manifest_path: manifestPath,
+        payload_family_count: payloadFamilies.length,
+        missing_lane_count: missingLanes.length,
+        payload_families: payloadFamilies.map((family) => this.sanitizeCatalogFamily(family)),
+        missing_or_awaiting_manifest_lanes: missingLanes.map((lane) => ({
+          id: lane?.id || null,
+          state: lane?.state || 'unknown',
+          reason: lane?.reason || '[UNKNOWN: missing lane reason]',
+        })),
+        mounts: mounts.map((mount) => ({
+          path: mount?.path || null,
+          device: mount?.device || null,
+          filesystem: mount?.filesystem || null,
+          role: mount?.role || null,
+          status: mount?.status || 'unknown',
+          next_action: mount?.next_action || null,
+        })),
+        safety_policy: this.sanitizeCatalogSafetyPolicy(parsed.safety_policy || {}),
+        secret_policy: 'Sanitized catalog metadata only; secret values, Kubernetes Secret .data, dump contents, encrypted archive contents, and do-not-touch secret-material paths are not exposed.',
+      };
+    } catch (error) {
+      return {
+        source: 'disaster-recovery-catalog',
+        source_category: 'disaster_recovery_catalog',
+        backup_type: 'alfares_disaster_recovery_catalog',
+        available: false,
+        status: 'error',
+        manifest_path: manifestPath,
+        reason: error instanceof Error ? error.message : 'Unable to read disaster recovery catalog evidence.',
+        secret_policy: 'Catalog evidence only; secret values, Kubernetes Secret data, dump contents, and encrypted archive contents are not exposed.',
+      };
+    }
+  }
+
+  private sanitizeCatalogFamily(family: any) {
+    const currentPath = this.catalogPathAllowed(family)
+      ? this.sanitizeCatalogPathReference(family.current_path || null)
+      : '[REDACTED: do-not-touch secret material path]';
+
+    return {
+      id: family?.id || null,
+      family: family?.family || null,
+      category: family?.category || null,
+      owner: family?.owner || null,
+      decision: family?.decision || null,
+      current_path: currentPath,
+      target_state: this.sanitizeCatalogPathReference(family?.target_state || null),
+      restore_verification_status: family?.restore_verification_status || '[UNKNOWN: not reported]',
+      checksum_status: family?.checksum_status || '[UNKNOWN: not reported]',
+      allowed_next_action: family?.allowed_next_action || '[UNKNOWN: no next action recorded]',
+      known_evidence: this.sanitizeCatalogKnownEvidence(family?.known_evidence || {}),
+    };
+  }
+
+  private catalogPathAllowed(family: any) {
+    const id = String(family?.id || '').toLowerCase();
+    const category = String(family?.category || '').toLowerCase();
+    const currentPath = String(family?.current_path || '').toLowerCase();
+    return !id.includes('secret-material')
+      && !category.includes('do_not_touch')
+      && !currentPath.includes('.backup-secret');
+  }
+
+  private sanitizeCatalogKnownEvidence(evidence: any) {
+    return {
+      run_id: evidence?.run_id || null,
+      reported_size_human: evidence?.reported_size_human || null,
+      observed_directory_size_human: evidence?.observed_directory_size_human || null,
+      evidence_manifest: this.sanitizeCatalogPathReference(evidence?.evidence_manifest || null),
+      manifest_status: evidence?.manifest_status || null,
+      manifest_generated_at: evidence?.manifest_generated_at || null,
+    };
+  }
+
+  private sanitizeCatalogPathReference(value: string | null) {
+    if (!value) return null;
+    const lowered = String(value).toLowerCase();
+    if (lowered.includes('.backup-secret') || lowered.includes('secret-material')) {
+      return '[REDACTED: do-not-touch secret material path]';
+    }
+    return value;
+  }
+
+  private sanitizeCatalogSafetyPolicy(policy: any) {
+    return {
+      classification: policy?.classification || 'sanitized_metadata_only',
+      raw_payload_contents_included: Boolean(policy?.raw_payload_contents_included),
+      secret_values_included: Boolean(policy?.secret_values_included),
+      kubernetes_secret_data_included: Boolean(policy?.kubernetes_secret_data_included),
+      encrypted_archive_contents_included: Boolean(policy?.encrypted_archive_contents_included),
+      destructive_actions_performed: Boolean(policy?.destructive_actions_performed),
+      schedule_or_mount_changes_performed: Boolean(policy?.schedule_or_mount_changes_performed),
     };
   }
 

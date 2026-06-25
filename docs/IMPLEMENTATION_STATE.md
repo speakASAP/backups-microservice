@@ -23,9 +23,9 @@ BACKUPS ORCHESTRATOR: implement goal number N
 ## Current Status
 
 - Active goal: none
-- Active branch: `main`
-- Current wave: Roadmap complete through Goal 14; no numbered implementation goal remains until owner selects the next roadmap item
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI
+- Active branch: `codex/backups-phase1-catalog-support`
+- Current wave: Roadmap complete through Goal 15; deployment pending owner approval
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI, 15 Disaster Recovery Catalog UI
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -57,6 +57,8 @@ BACKUPS ORCHESTRATOR: implement goal number N
 | 11 | `implementation-goals/GOAL-11-restore-from-minio-verify.md` | done | `codex/backups-restore-minio-verify` | 10 | Deployed after owner approval in combined rollout |
 | 12 | `implementation-goals/GOAL-12-notifications-integration.md` | done | `codex/backups-notifications-integration` | 11 | Deployed after owner approval in notification/logging rollout |
 | 13 | `implementation-goals/GOAL-13-logging-integration.md` | done | `codex/backups-logging-integration` | 12 | Deployed after owner approval in notification/logging rollout |
+| 14 | `implementation-goals/GOAL-14-durability-evidence-ui.md` | done | `main` | 13 | Database and Vault sanitized evidence UI complete |
+| 15 | `implementation-goals/GOAL-15-disaster-recovery-catalog-ui.md` | done | `codex/backups-phase1-catalog-support` | 14, Phase 0 DR catalog | Deployment pending owner approval |
 
 ## Execution Waves
 
@@ -104,6 +106,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-25: Completed BAK-G15 disaster-recovery catalog UI on `codex/backups-phase1-catalog-support` after Phase 0 catalog evidence. Added sanitized `external_evidence.disaster_recovery_catalog` to `/dashboard/summary`, redacted do-not-touch secret-material paths, rendered catalog families and missing lanes in `/admin`, mounted `/home/ssf/Documents/Github/shared/runtime-evidence/disaster-recovery` read-only in the Kubernetes deployment manifest, and added focused sanitizer coverage. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 12 suites and 39 tests; `node --check web/admin/app.js` passed; `git diff --check` passed; `jq . /home/ssf/Documents/Github/shared/runtime-evidence/disaster-recovery/latest.json` passed and showed 12 payload families plus 5 missing lanes; `kubectl apply --dry-run=client -f k8s/deployment.yaml` passed; unauthenticated `https://backups.alfares.cz/dashboard/summary` returned 401. No raw payloads were read, copied, moved, deleted, restored, or listed. No cron, systemd, mount, secret, deploy, commit, or push was performed.
 2026-06-25: Closed the remaining BAK-G14 Vault evidence follow-up after the parallel worker delivered `/home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json`. Live sanitized evidence now shows Vault status success with 13 artifacts and database durability evidence success with 38 databases and 2 artifacts. Updated STATE/TASKS/implementation state to return the project to completed/frozen with no open tasks. Validation: read-only manifest checks passed for `/home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json` and `/home/ssf/Documents/Github/database-server/backup-evidence/latest.json`; `git diff --check` passed after state-doc updates. No secret values, backup payloads, backup deletions, restores, deployments, commits, or pushes were performed.
 2026-06-25: Completed BAK-G14 durability evidence UI after owner request. Added sanitized external evidence to `/dashboard/summary`, rendered Disk backup evidence in `/admin`, mounted database-server and Vault evidence directories read-only, and deployed image `localhost:5000/backups-microservice:73191570-dirty-20260625165159`. Database-server backup evidence is live from `/home/ssf/Documents/Github/database-server/backup-evidence/latest.json`: status success, 38 databases, PostgreSQL logical dump plus Redis RDB artifacts. Vault evidence slot is deployed but awaits the parallel Vault worker's sanitized `latest.json`; no Vault secret values, keys, tokens, dump contents, or WAL-G output are exposed. Validation: `node --check web/admin/app.js` passed; `npm run build` passed; `npm test -- --runInBand` passed with 11 suites and 38 tests; `git diff --check` passed; `kubectl apply --dry-run=client -f k8s/deployment.yaml` passed; deploy rollout, health, readiness, and unauthenticated smoke passed; authenticated `/dashboard/summary` returned external evidence with database status success, 38 databases, 2 artifacts, and Vault status awaiting_manifest; authenticated `/admin` HTML contains `Disk backup evidence`, `external-evidence-list`, and `evidence-ui-20260625`. No backup deletion or production restore was performed. No commit or push was performed per repository policy.
 2026-06-13: Revalidated BAK-G4 restore verification evidence on `main` after explicit owner request. No code changes were needed because the implementation is already present and merged: backup run verification fields/migration, pending/skipped backup-flow evidence, restore execution verification updates, distinct verification notifications, and admin UI visibility are tracked files on `main`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 11 suites and 38 tests; `node --check web/admin/app.js` passed; `git diff --check` passed; worktree remained clean. Roadmap check: implementation-goals/README.md, this state file, STATE.json, and scripts/next_goal.sh now agree that Goals 01-13 are done, so no numbered roadmap goal is currently ready to implement; the next implementation requires owner selection of a new Goal 14 or explicit expansion of an open decision.
@@ -147,4 +150,4 @@ Next command:
 
 ## Next Action
 
-No tasks left.
+Owner review and deployment approval for BAK-G15 if the live dashboard should display the Phase 0 disaster-recovery catalog.
