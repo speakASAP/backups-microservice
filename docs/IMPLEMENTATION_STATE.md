@@ -1,6 +1,6 @@
 # Backups Implementation State
 
-Last updated: 2026-06-13.
+Last updated: 2026-06-25.
 
 ## Orchestrator Command
 
@@ -24,8 +24,8 @@ BACKUPS ORCHESTRATOR: implement goal number N
 
 - Active goal: none
 - Active branch: `main`
-- Current wave: Roadmap complete through Goal 13; no numbered implementation goal remains until owner selects the next roadmap item
-- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration
+- Current wave: Roadmap complete through Goal 14; no numbered implementation goal remains until owner selects the next roadmap item
+- Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI
 - Running goals: none
 - Blocked goals: none
 - Worker threads: none
@@ -104,6 +104,7 @@ Also update `STATE.json` and `TASKS.md` when the implementation state changes.
 Append newest entries at the top.
 
 ```text
+2026-06-25: Closed the remaining BAK-G14 Vault evidence follow-up after the parallel worker delivered `/home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json`. Live sanitized evidence now shows Vault status success with 13 artifacts and database durability evidence success with 38 databases and 2 artifacts. Updated STATE/TASKS/implementation state to return the project to completed/frozen with no open tasks. Validation: read-only manifest checks passed for `/home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json` and `/home/ssf/Documents/Github/database-server/backup-evidence/latest.json`; `git diff --check` passed after state-doc updates. No secret values, backup payloads, backup deletions, restores, deployments, commits, or pushes were performed.
 2026-06-25: Completed BAK-G14 durability evidence UI after owner request. Added sanitized external evidence to `/dashboard/summary`, rendered Disk backup evidence in `/admin`, mounted database-server and Vault evidence directories read-only, and deployed image `localhost:5000/backups-microservice:73191570-dirty-20260625165159`. Database-server backup evidence is live from `/home/ssf/Documents/Github/database-server/backup-evidence/latest.json`: status success, 38 databases, PostgreSQL logical dump plus Redis RDB artifacts. Vault evidence slot is deployed but awaits the parallel Vault worker's sanitized `latest.json`; no Vault secret values, keys, tokens, dump contents, or WAL-G output are exposed. Validation: `node --check web/admin/app.js` passed; `npm run build` passed; `npm test -- --runInBand` passed with 11 suites and 38 tests; `git diff --check` passed; `kubectl apply --dry-run=client -f k8s/deployment.yaml` passed; deploy rollout, health, readiness, and unauthenticated smoke passed; authenticated `/dashboard/summary` returned external evidence with database status success, 38 databases, 2 artifacts, and Vault status awaiting_manifest; authenticated `/admin` HTML contains `Disk backup evidence`, `external-evidence-list`, and `evidence-ui-20260625`. No backup deletion or production restore was performed. No commit or push was performed per repository policy.
 2026-06-13: Revalidated BAK-G4 restore verification evidence on `main` after explicit owner request. No code changes were needed because the implementation is already present and merged: backup run verification fields/migration, pending/skipped backup-flow evidence, restore execution verification updates, distinct verification notifications, and admin UI visibility are tracked files on `main`. Validation: `npm run build` passed; `npm test -- --runInBand` passed with 11 suites and 38 tests; `node --check web/admin/app.js` passed; `git diff --check` passed; worktree remained clean. Roadmap check: implementation-goals/README.md, this state file, STATE.json, and scripts/next_goal.sh now agree that Goals 01-13 are done, so no numbered roadmap goal is currently ready to implement; the next implementation requires owner selection of a new Goal 14 or explicit expansion of an open decision.
 2026-06-13: Deployed approved notification/logging branch `codex/backups-logging-integration` at commit `cb06ec77` to `statex-apps` with image `localhost:5000/backups-microservice:cb06ec77`. Kubernetes manifests applied, deployment rolled out successfully, health and readiness checks passed, and full smoke passed for health liveness, health readiness, info, protected `/jobs` rejection, dashboard summary, jobs list, targets list, and recent backup runs. This deployed BAK-G12 NotificationsModule integration and BAK-G13 LoggingModule integration. No manual backup, backup deletion, or restore was performed during deployment validation.
@@ -146,4 +147,4 @@ Next command:
 
 ## Next Action
 
-BAK-G14 is deployed. Next action is for the parallel Vault worker to write sanitized Vault backup evidence to `/home/ssf/Documents/Github/shared/runtime-evidence/vault-backups/latest.json`, then recheck the frontend Vault evidence card.
+No tasks left.
