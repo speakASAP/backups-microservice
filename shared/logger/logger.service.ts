@@ -21,6 +21,8 @@ export interface StructuredLogPayload {
   service: string;
   event?: string;
   timestamp: string;
+  duration_ms?: number;
+  correlation_id?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -66,8 +68,21 @@ export class LoggerService implements NestLoggerService {
 
   private async sendToLoggingService(payload: StructuredLogPayload): Promise<void> {
     if (!this.loggingServiceUrl) return;
+    const metadata = sanitizeMetadata({
+      ...(payload.event ? { event: payload.event } : {}),
+      ...(payload.metadata || {}),
+    });
+    const centralPayload = {
+      level: payload.level,
+      msg: payload.message,
+      service: payload.service,
+      timestamp: payload.timestamp,
+      ...(payload.duration_ms !== undefined ? { duration_ms: payload.duration_ms } : {}),
+      ...(payload.correlation_id ? { correlation_id: payload.correlation_id } : {}),
+      ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
+    };
     firstValueFrom(
-      this.httpService.post(`${this.loggingServiceUrl}${this.loggingServiceApiPath}`, payload, {
+      this.httpService.post(`${this.loggingServiceUrl}${this.loggingServiceApiPath}`, centralPayload, {
         timeout: 5000,
         headers: { 'Content-Type': 'application/json' },
       }),
@@ -94,12 +109,20 @@ export class LoggerService implements NestLoggerService {
       ...(input.trace ? { trace: input.trace } : {}),
       ...(input.metadata || {}),
     });
+    const durationMs = typeof metadata?.duration_ms === 'number' ? metadata.duration_ms : undefined;
+    const correlationId = typeof metadata?.correlation_id === 'string'
+      ? metadata.correlation_id
+      : typeof metadata?.correlationId === 'string'
+        ? metadata.correlationId
+        : undefined;
     const payload: StructuredLogPayload = {
       level,
       event: input.event,
       message: redactString(input.message),
       service: this.serviceName,
       timestamp: new Date().toISOString(),
+      ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
+      ...(correlationId ? { correlation_id: correlationId } : {}),
       ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
     };
     this.sendToLoggingService(payload).catch(() => {});

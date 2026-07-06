@@ -53,7 +53,7 @@ describe('LoggerService', () => {
       event: 'backup.run.started',
       message: 'Starting backup',
       context: 'BackupService',
-      metadata: { job_id: 'job-1', token: 'not-for-output' },
+      metadata: { job_id: 'job-1', token: 'not-for-output', duration_ms: 42, correlation_id: 'corr-1' },
     });
     await new Promise((resolve) => setImmediate(resolve));
 
@@ -61,10 +61,12 @@ describe('LoggerService', () => {
       'http://logging/api/logs',
       expect.objectContaining({
         level: 'info',
-        event: 'backup.run.started',
-        message: 'Starting backup',
+        msg: 'Starting backup',
         service: 'backups-microservice',
+        duration_ms: 42,
+        correlation_id: 'corr-1',
         metadata: expect.objectContaining({
+          event: 'backup.run.started',
           context: 'BackupService',
           job_id: 'job-1',
           token: '[redacted]',
