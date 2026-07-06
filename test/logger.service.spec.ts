@@ -76,6 +76,28 @@ describe('LoggerService', () => {
     );
   });
 
+  it('adds bearer authorization when LOGGING_SERVICE_TOKEN is set', async () => {
+    process.env.LOGGING_SERVICE_URL = 'http://logging';
+    process.env.LOGGING_SERVICE_TOKEN = 'central-token';
+    const post = jest.fn().mockReturnValue(of({ data: { ok: true } }));
+    const logger = serviceWith(post);
+
+    logger.log('Token auth smoke', 'LoggerService');
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(post).toHaveBeenCalledWith(
+      'http://logging/api/logs',
+      expect.any(Object),
+      {
+        timeout: 5000,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer central-token',
+        },
+      },
+    );
+  });
+
   it('writes redacted operation logs locally when remote logging is disabled', () => {
     delete process.env.LOGGING_SERVICE_URL;
     const post = jest.fn();

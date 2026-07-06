@@ -81,10 +81,16 @@ export class LoggerService implements NestLoggerService {
       ...(payload.correlation_id ? { correlation_id: payload.correlation_id } : {}),
       ...(metadata && Object.keys(metadata).length > 0 ? { metadata } : {}),
     };
+    const loggingServiceToken = process.env.LOGGING_SERVICE_TOKEN;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(loggingServiceToken ? { Authorization: `Bearer ${loggingServiceToken}` } : {}),
+    };
+
     firstValueFrom(
       this.httpService.post(`${this.loggingServiceUrl}${this.loggingServiceApiPath}`, centralPayload, {
         timeout: 5000,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       }),
     ).catch(() => {});
   }
