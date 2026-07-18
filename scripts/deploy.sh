@@ -40,14 +40,7 @@ compute_default_tag() {
   fi
 }
 
-DEFAULT_COMMIT="$(compute_default_tag)"
-if [ -n "$DEFAULT_COMMIT" ] && (cd "$PROJECT_ROOT" && git diff --quiet && git diff --cached --quiet); then
-  DEFAULT_TAG="$DEFAULT_COMMIT"
-elif [ -n "$DEFAULT_COMMIT" ]; then
-  DEFAULT_TAG="${DEFAULT_COMMIT}-dirty-$(date -u +%Y%m%d%H%M%S)"
-else
-  DEFAULT_TAG="build-$(date -u +%Y%m%d%H%M%S)"
-fi
+DEFAULT_TAG="$(compute_default_tag)"
 IMAGE_TAG="${1:-$DEFAULT_TAG}"
 IMAGE="${REGISTRY}/${SERVICE_NAME}:${IMAGE_TAG}"
 IMAGE_LATEST="${REGISTRY}/${SERVICE_NAME}:latest"
