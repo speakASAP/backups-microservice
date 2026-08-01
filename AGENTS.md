@@ -13,13 +13,6 @@ Read those first, then follow the repository-specific notes below and the curren
 
 # AGENTS.md — backups-microservice
 
-## Remote Source Of Truth
-
-- Work on the remote server alias `alfares` only.
-- The project path is `/home/ssf/Documents/Github/backups-microservice`.
-- All code changes must be made in that remote folder, not in local backup copies.
-- Commits are allowed on the remote repository when work is complete and validated.
-- Use `ssh alfares 'cd /home/ssf/Documents/Github/backups-microservice && <command>'` for one-off commands.
 
 ## Backups Orchestrator Entrypoint
 
@@ -151,8 +144,7 @@ curl -X POST https://backups.alfares.cz/api/backups/trigger
 
 ## Constraints
 
-- Never modify BUSINESS.md or GOALS.md
-- Never commit or push — ask user
+- Never modify BUSINESS.md
 - Secrets always via Vault, never hardcoded
 - Do not delete backup runs or perform production restore without explicit human approval and recorded reason
 - Do not mark a goal complete without validation evidence or a recorded blocker
