@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { verifyAuthToken } from './auth/jwt-verifier';
 import * as express from 'express';
 import * as path from 'path';
 import { AppModule } from './app.module';
@@ -31,16 +31,22 @@ function isProtectedAdminPage(reqPath: string): boolean {
   return ['/admin', '/admin/', '/admin/index.html', '/admin/jobs.html', '/admin/restore.html'].includes(reqPath);
 }
 
-function isAuthorizedAdminToken(jwtService: JwtService, token?: string): boolean {
+async function isAuthorizedAdminToken(token?: string): Promise<boolean> {
   if (!token) return false;
   const serviceToken = process.env.SERVICE_TOKEN;
   if (serviceToken && token === serviceToken) return true;
 
   try {
-    const payload = jwtService.verify<{ roles?: string[] }>(token, { secret: process.env.JWT_SECRET });
+    // TASK-KEY-F3: the admin UI gate must accept the same algorithms as the API
+    // guard, or RS256-issued admins are locked out of /admin once auth switches.
+    const payload = await verifyAuthToken(token);
     const roles = Array.isArray(payload.roles) ? payload.roles : [];
     return ADMIN_ROLES.some((role) => roles.includes(role));
-  } catch {
+  } catch (error) {
+    // A rejected token is an expected outcome here (redirect to login), but it must
+    // never be indistinguishable from a JWKS outage — log with cause, then deny.
+    const message = error instanceof Error ? error.message : String(error);
+    new Logger('AdminAuth').warn(`Admin token rejected: ${message}`);
     return false;
   }
 }
@@ -49,12 +55,11 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create(AppModule);
-  const jwtService = app.get(JwtService);
   await app.get(SchemaReadinessService).apply();
 
   const webPath = path.join(process.cwd(), 'web');
   app.use(express.json({ limit: '32kb' }));
-  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/admin/')) {
       res.setHeader('Cache-Control', 'no-store');
     }
@@ -64,7 +69,7 @@ async function bootstrap() {
     if (req.path === '/admin/session' || req.path === '/admin/logout') return next();
     if (isProtectedAdminPage(req.path)) {
       const token = parseCookies(req.headers.cookie)[ADMIN_COOKIE];
-      if (!isAuthorizedAdminToken(jwtService, token)) {
+      if (!(await isAuthorizedAdminToken(token))) {
         res.setHeader('Cache-Control', 'no-store');
         res.setHeader('Set-Cookie', `${ADMIN_COOKIE}=; ${adminCookieOptions(0)}`);
         return res.redirect(302, `/admin/login?returnTo=${encodeURIComponent(req.originalUrl || '/admin')}`);
@@ -95,7 +100,7 @@ async function bootstrap() {
       });
       const payload = await authResponse.json().catch(() => null);
       const accessToken = payload?.accessToken;
-      if (!authResponse.ok || !isAuthorizedAdminToken(jwtService, accessToken)) {
+      if (!authResponse.ok || !(await isAuthorizedAdminToken(accessToken))) {
         return res.status(401).json({ message: 'Invalid admin credentials' });
       }
 
