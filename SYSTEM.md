@@ -14,9 +14,8 @@
 ## Deployment
 
 ```bash
-./scripts/deploy.sh          # rebuild + redeploy
-kubectl apply -f k8s/ -n statex-apps   # first deploy
-kubectl rollout status deployment/backups-microservice -n statex-apps
+./scripts/deploy.sh
+/home/ssf/Documents/Github/shared/scripts/wait-for-rollout.sh -n statex-apps backups-microservice
 kubectl logs -f deploy/backups-microservice -n statex-apps
 ```
 
