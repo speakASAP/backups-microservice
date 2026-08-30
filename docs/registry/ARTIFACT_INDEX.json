@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "repository": "backups-microservice",
+  "generated_at": "2026-08-30T21:22:43Z",
+  "artifacts": [
+    {
+      "id": "BAK-G15",
+      "type": "goal",
+      "status": "done",
+      "title": "Show sanitized Phase 0 disaster-recovery catalog in the frontend",
+      "path": "TASKS.md",
+      "parent_ids": [
+        "BAK-INTENT"
+      ],
+      "runlayer_goal_id": null,
+      "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "BAK-G15-VAL",
+      "type": "validation",
+      "status": "validated",
+      "title": "BAK-G15 deployment and smoke validation evidence",
+      "path": "docs/IMPLEMENTATION_STATE.md",
+      "parent_ids": [
+        "BAK-G15"
+      ],
+      "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "BAK-INTENT",
+      "type": "vision",
+      "status": "active",
+      "title": "Backups intent preservation contract",
+      "path": "docs/orchestrator/INTENT.md",
+      "parent_ids": [],
+      "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "BAK-VALIDATION-DEBT",
+      "type": "validation_debt",
+      "status": "draft",
+      "title": "Repository validation debt ledger",
+      "path": "docs/orchestrator/VALIDATION_DEBT.md",
+      "parent_ids": [],
+      "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "WAVE0-REGISTRY",
+      "type": "decision",
+      "status": "validated",
+      "title": "Wave 0 repository-contract adoption",
+      "path": "docs/registry/REPOSITORY_PROFILE.json",
+      "parent_ids": [],
+      "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "WAVE0-VAL-20260830",
+      "type": "validation",
+      "status": "validated",
+      "title": "Wave 0 repository-contract validation evidence",
+      "path": "docs/orchestrator/WAVE0_REPOSITORY_CONTRACT_VALIDATION.md",
+      "parent_ids": [
+        "WAVE0-REGISTRY"
+      ],
+      "updated_at": "2026-08-30T21:22:43Z"
+    }
+  ],
+  "warnings": [
+    "[UNKNOWN: RunLayer goal/task mappings are not declared in repository docs and remain null.]"
+  ]
+}

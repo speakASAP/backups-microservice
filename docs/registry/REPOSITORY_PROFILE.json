@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "repository": "backups-microservice",
+  "profile": "ips-full",
+  "project_registration": {
+    "runlayer_project_slug": null,
+    "runlayer_permalink": null,
+    "status": "unknown",
+    "warning": "[UNKNOWN: RunLayer project mapping is not declared in repository docs.]"
+  },
+  "collectable_paths": [
+    "AGENTS.md",
+    "AGENT_OPERATIONS.md",
+    "BUSINESS.md",
+    "SYSTEM.md",
+    "TASKS.md",
+    "README.md",
+    "STATE.json",
+    "docs/IMPLEMENTATION_STATE.md",
+    "docs/orchestrator/INTENT.md",
+    "docs/orchestrator/VALIDATION_DEBT.md",
+    "docs/orchestrator/WAVE0_REPOSITORY_CONTRACT_VALIDATION.md",
+    "docs/registry/ARTIFACT_INDEX.json",
+    "docs/registry/REPOSITORY_PROFILE.json"
+  ],
+  "excluded_path_patterns": [
+    ".env*",
+    "**/*.pem",
+    "**/backups/**",
+    "**/coverage/**",
+    "**/dumps/**",
+    "**/node_modules/**",
+    "**/raw/**",
+    "**/runtime-evidence/**",
+    "**/secrets/**"
+  ],
+  "owners": {
+    "business_intent": "human",
+    "technical_system": "backups-microservice",
+    "planning_state": "backups-orchestrator",
+    "integration": "service-owner",
+    "registry_contract": "copilot-cli"
+  }
+}

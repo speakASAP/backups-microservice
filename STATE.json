@@ -1,44 +1,29 @@
 {
-  "stage": "orchestrated-implementation",
-  "health": "healthy-public-health-check",
-  "last_updated": "2026-06-25",
-  "intent_preservation_system": {
-    "process": "docs/process/INTENT_PRESERVATION_SYSTEM.md",
-    "invariants": "docs/process/PROJECT_INVARIANTS.md",
-    "gate_standard": "docs/process/OPERATIONAL_GATES.md",
-    "required_chain": "Original Intent -> Goal Impact -> Execution Plan -> Context Package -> Coding Prompt -> Code -> Validation Report -> State Update"
+  "schema_version": "1.0",
+  "repository": "backups-microservice",
+  "service": {
+    "name": "backups-microservice",
+    "kind": "infrastructure",
+    "lifecycle": "active",
+    "deployment": "kubernetes"
   },
-  "active_goal": null,
-  "completed_goals": [
-    "BAK-G1 intent preservation and roadmap",
-    "BAK-G2 operator dashboard frontend",
-    "BAK-G3 dashboard summary API",
-    "BAK-G4 restore verification evidence",
-    "BAK-G5 coverage model",
-    "BAK-G6 safety audit controls",
-    "BAK-G7 production readiness and smoke tests",
-    "BAK-G8 PostgreSQL schema namespace and migrations",
-    "BAK-G9 nightly PostgreSQL backup to MinIO",
-    "BAK-G10 configurable cron schedule policies",
-    "BAK-G11 restore from MinIO and verify",
-    "BAK-G12 NotificationsModule integration",
-    "BAK-G13 LoggingModule integration",
-    "BAK-G14 durability evidence UI",
-    "BAK-G15 disaster recovery catalog UI"
-  ],
-  "next_goal": null,
-  "orchestrator": {
-    "entrypoint": "AGENTS.md",
-    "state": "docs/IMPLEMENTATION_STATE.md",
-    "master_prompt": "docs/IMPLEMENTATION_ORCHESTRATOR.md",
-    "goal_index": "implementation-goals/README.md"
+  "planning": {
+    "status": "done",
+    "active_goal_ids": [],
+    "next_ready_goal_ids": [],
+    "blocked_goal_ids": [],
+    "active_workstream_ids": [],
+    "last_updated_at": "2026-08-30T21:22:43Z"
   },
-  "notes": "BAK-G15 disaster recovery catalog UI was committed, pushed to main, deployed, and authenticated-smoke validated. Live image: localhost:5000/backups-microservice:5365c98f. No backup payload move/delete/copy, restore, schedule change, mount/remount, or secret exposure was performed.",
-  "project_status": "completed_frozen",
-  "next_focus": "No tasks left.",
-  "open_task_ids": [],
-  "blockers": [],
-  "completed_at": "2026-06-25",
-  "frozen_at": null,
-  "updated_at": "2026-06-25"
+  "delivery": {
+    "last_validation_id": "WAVE0-VAL-20260830",
+    "last_validation_status": "validated",
+    "validation_debt_count": 0,
+    "last_deployment_commit": "5365c98f"
+  },
+  "collection": {
+    "profile": "ips-full",
+    "artifact_index": "docs/registry/ARTIFACT_INDEX.json",
+    "status_source": "human-and-agent-maintained"
+  }
 }
