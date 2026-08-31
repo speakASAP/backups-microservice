@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "repository": "backups-microservice",
-  "generated_at": "2026-08-30T21:22:43Z",
+  "generated_at": "2026-08-31T08:15:33Z",
   "artifacts": [
     {
       "id": "BAK-G15",
@@ -27,6 +27,15 @@
       "updated_at": "2026-08-30T21:22:43Z"
     },
     {
+      "id": "BAK-G16-HIGH-REVIEW-FOLLOWUP",
+      "type": "goal",
+      "status": "active",
+      "title": "BAK-G16 HIGH-review follow-up validation and deploy readiness",
+      "path": "TASKS.md",
+      "parent_ids": [],
+      "updated_at": "2026-08-31T07:45:00Z"
+    },
+    {
       "id": "BAK-INTENT",
       "type": "vision",
       "status": "active",
@@ -43,6 +52,26 @@
       "path": "docs/orchestrator/VALIDATION_DEBT.md",
       "parent_ids": [],
       "updated_at": "2026-08-30T21:22:43Z"
+    },
+    {
+      "id": "MINIO-INDEPENDENT-BACKUP",
+      "type": "goal",
+      "status": "blocked",
+      "title": "Independent storage target and isolated restore plan for MinIO application-bucket backups",
+      "path": "TASKS.md",
+      "parent_ids": [],
+      "updated_at": "2026-08-31T07:45:00Z"
+    },
+    {
+      "id": "VAL-BAK-G16-HIGH-REVIEW-20260831",
+      "type": "validation",
+      "status": "validated",
+      "title": "BAK-G16 HIGH-review follow-up source-validation evidence",
+      "path": "docs/IMPLEMENTATION_STATE.md",
+      "parent_ids": [
+        "BAK-G16-HIGH-REVIEW-FOLLOWUP"
+      ],
+      "updated_at": "2026-08-31T07:45:00Z"
     },
     {
       "id": "WAVE0-REGISTRY",

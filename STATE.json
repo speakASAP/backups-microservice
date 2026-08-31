@@ -21,7 +21,7 @@
   },
   "delivery": {
     "last_validation_id": "VAL-BAK-G16-HIGH-REVIEW-20260831",
-    "last_validation_status": "source-validated-awaiting-commit-deploy",
+    "last_validation_status": "validated",
     "validation_debt_count": 1,
     "last_deployment_commit": "be82d39"
   },
