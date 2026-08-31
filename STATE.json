@@ -59,6 +59,5 @@
     "Review and commit/deploy the uncommitted BAK-G16 HIGH-review hardening in a separate authorized action.",
     "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria.",
     "Add an automated isolated restore-verification runner; successful backups remain conservatively pending until that lane exists."
-  ],
-  "status": "active"
+  ]
 }
