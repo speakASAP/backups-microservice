@@ -40,7 +40,7 @@ A backup is recoverable only when the data, keys, manifests, image provenance, a
 
 Goal BAK-G5 defines these source categories as operator coverage metadata before full execution support:
 
-- `postgres_database`: executable today through the existing WAL-G PostgreSQL path. Requires host, port, database name, Vault/Kubernetes secret reference, service owner, RPO/RTO, criticality, restore class, and verification evidence.
+- `postgres_database`: executable through PostgreSQL `pg_dump` streamed to the configured MinIO prefix by WAL-G storage commands. Requires host, port, database name, Vault/Kubernetes secret reference, service owner, RPO/RTO, criticality, restore class, and verification evidence.
 - `minio_bucket`: contract-only in Goal 05. Future implementation must protect bucket objects, metadata, lifecycle policy, encryption settings, and restore runbook without exposing object-store credentials.
 - `kubernetes_resource`: contract-only in Goal 05. Future implementation must protect manifests and cluster configuration needed to recreate workloads, services, ingress, RBAC, configmaps, external secret definitions, and cronjobs.
 - `secret_reference`: contract-only in Goal 05. Backups may track coverage and restore-class metadata for secret references, but secret values, private keys, tokens, and credentials remain owned by Vault/ESO and require encrypted secret-safe backup mechanisms.
@@ -69,7 +69,7 @@ Current API modules support:
 
 Current persistence models are `backup_targets`, `backup_jobs`, `backup_runs`, and `restore_requests`.
 
-Current target type is PostgreSQL only. WAL-G environment settings point to MinIO-compatible storage and use configured compression.
+Executable jobs currently support PostgreSQL targets only. The repaired path uses PostgreSQL `pg_dump` custom-format output streamed to MinIO-compatible storage through WAL-G storage commands without adding a second compression layer to the custom archive.
 
 The existing admin frontend is functional but prototype-level: it uses a dark Tailwind CDN surface, requires raw UUID entry for manual backup and restore, does not show service coverage clearly, and does not surface guardrails or storage/retention settings in one place.
 
@@ -218,3 +218,10 @@ Each future session should:
 - 2026-06-12: RAG query confirmed approved scope: WAL-G logical PostgreSQL backups to MinIO, static admin dashboard, auth/logging/notifications/Vault/K8s integration, and future target extensibility.
 - 2026-06-12: Public production `/health` and `/info` returned healthy service metadata.
 - 2026-06-12: Production `/jobs` without Authorization returned `401`, confirming the management API is protected.
+
+
+## 2026-08-30 Execution Correction
+
+Production evidence invalidated the historical `wal-g pgbackup --full-backup` assumption: WAL-G 3.0.3 has no `pgbackup` command, and the deployed image lacks PostgreSQL client tools. BAK-G16 replaces that path with `pg_dump` streamed to `wal-g st put --read-stdin --no-compress`, and replaces unsupported `pgbackup-fetch` with `wal-g st cat` streamed into `pg_restore`. Production remains uncorrected until the reviewed working tree is committed and deployed.
+
+MinIO bucket targets remain contract-only. The `wisdom-quotes MinIO bucket` target is already registered as coverage metadata, but executable coverage remains [MISSING: approved independent storage target and isolated restore plan], plus the Phase 5 common-root destination, disk-space review, and non-delete dry-run approval.

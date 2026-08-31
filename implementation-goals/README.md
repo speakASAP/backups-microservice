@@ -31,13 +31,14 @@ To print the current resume checkpoint from the shell:
 13. `GOAL-13-logging-integration.md` - structured, redacted operational logging for backup control-plane lifecycle events.
 14. `GOAL-14-durability-evidence-ui.md` - sanitized database and Vault durability evidence in the dashboard.
 15. `GOAL-15-disaster-recovery-catalog-ui.md` - sanitized centralized disaster-recovery catalog in the dashboard.
+16. `GOAL-16-postgres-execution-repair.md` - repair invalid WAL-G PostgreSQL execution with a supported logical dump pipeline.
 
 ## Parallelization
 
 Safe default:
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
+01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16
 ```
 
 Goal 05 exploration can begin while Goal 04 implementation is active only if it is documentation-only and does not alter shared entities, migrations, DTOs, or UI contracts. Goal 06 depends on the restore verification model from Goal 04.

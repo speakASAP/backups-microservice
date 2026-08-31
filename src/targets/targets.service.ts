@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BackupTarget } from './entities/backup-target.entity';
 import { CreateTargetDto } from './dto/create-target.dto';
 import { UpdateTargetDto } from './dto/update-target.dto';
+import { assertSafeDatabaseName } from '../common/database-name';
 
 @Injectable()
 export class TargetsService {
@@ -20,12 +21,14 @@ export class TargetsService {
   }
 
   create(dto: CreateTargetDto): Promise<BackupTarget> {
+    assertSafeDatabaseName(dto.database_name);
     const target = this.repo.create({ ...dto, enabled: dto.enabled ?? true });
     return this.repo.save(target);
   }
 
   async update(id: string, dto: UpdateTargetDto): Promise<BackupTarget> {
     const target = await this.findOne(id);
+    if (dto.database_name !== undefined) assertSafeDatabaseName(dto.database_name);
     Object.assign(target, dto);
     return this.repo.save(target);
   }

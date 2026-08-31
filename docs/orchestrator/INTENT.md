@@ -7,7 +7,7 @@ Backups is the ecosystem durability service. It must answer: what data is protec
 ## Intent Preservation Rules
 
 1. Backups owns backup orchestration and restore evidence, not the business data inside protected services.
-2. PostgreSQL backups use WAL-G logical `pgbackup` mode and store artifacts in MinIO-compatible object storage.
+2. PostgreSQL backups use `pg_dump` logical archives streamed through supported WAL-G storage commands into MinIO-compatible object storage. Approved PostgreSQL restores retrieve the deterministic object with `wal-g st cat` and stream it into `pg_restore` using the exact approved target.
 3. Backup secrets are never UI or source-code data. Credentials remain in Vault and Kubernetes secrets.
 4. Restore is destructive. Production restore requires explicit human approval and must clearly name the target and backup run.
 5. A backup that cannot be restored or verified is not considered successful operational protection.

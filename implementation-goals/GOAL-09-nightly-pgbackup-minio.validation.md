@@ -38,3 +38,8 @@ last_updated: 2026-06-13
 ## Recommendation
 
 Deployed after owner approval with startup metadata bootstrap enabled.
+
+
+## 2026-08-30 Validation Correction
+
+The original build/test evidence did not execute the runtime backup command. Production runs proved `wal-g pgbackup --full-backup` unsupported. Treat the old execution-path claim as invalidated and use BAK-G16 validation for the replacement path.

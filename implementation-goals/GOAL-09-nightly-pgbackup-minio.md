@@ -34,3 +34,8 @@ Ensure Backups creates and schedules a default nightly PostgreSQL logical backup
 - Run `npm test -- --runInBand`.
 - Run `bash -n scripts/smoke-test.sh` and `git diff --check`.
 - Deploy only after owner approval; this change schedules future backups but does not immediately trigger one.
+
+
+## 2026-08-30 Correction
+
+Production invalidated the historical execution assumption: WAL-G 3.0.3 does not provide `pgbackup`. BAK-G16 supersedes that command path with `pg_dump` streamed through supported WAL-G storage commands. The scheduler/bootstrap contract remains valid.

@@ -1,10 +1,12 @@
 # Backups Implementation State
 
-Last updated: 2026-06-25.
+Last updated: 2026-08-31.
 
 ## Orchestrator Command
 
 ```text
+2026-08-31: BAK-G16 second HIGH review round repaired in the working tree: shared backup-run advisory lock closing the retention/restore race, exact-object storage proof for the retention safety anchor, fail-closed 503 restore gate when the database cannot serialize restores, and restart-safe reconciliation for stranded restore requests. Full suite 18/175, build, typecheck, and a 27/27 isolated PostgreSQL 15 + MinIO round trip passed. Still uncommitted and undeployed.
+2026-08-30: BAK-G16 source repair implemented and validated without commit or deployment. Production remains on image `localhost:5000/backups-microservice:a0d1e9f` and continues to fail scheduled runs until deployment. MinIO bucket execution remains architecture-blocked; wisdom-quotes coverage metadata is registered.
 2026-06-25: Deployed BAK-G15 disaster recovery catalog UI after owner approval. Branch `codex/backups-phase1-catalog-support` was pushed, fast-forward merged into `main`, and `main` was pushed. Deployment image `localhost:5000/backups-microservice:5365c98f` rolled out successfully. Validation: deploy build and rollout passed; health/readiness passed; unauthenticated `/jobs` rejected with `401`; authenticated smoke passed for dashboard summary, jobs list, targets list, and recent backup runs; live `/dashboard/summary` returned catalog status `success`, 12 payload families, 5 missing lanes, and `contains_backup_secret_path=false`. No backup payload move/delete/copy, restore, schedule change, mount/remount, or secret exposure was performed.
 BACKUPS ORCHESTRATOR: continue implementation
 ```
@@ -23,12 +25,12 @@ BACKUPS ORCHESTRATOR: implement goal number N
 
 ## Current Status
 
-- Active goal: none
+- Active goal: BAK-G16 PostgreSQL Backup Execution Repair
 - Active branch: `main`
-- Current wave: Roadmap complete through Goal 15; deployment pending owner approval
+- Current wave: Goal 16 implemented and validated; commit/deployment intentionally pending owner action
 - Completed goals: 01 Intent Preservation And Roadmap, 02 Operator Dashboard Frontend, 03 Dashboard Summary API, 04 Restore Verification Evidence, 05 Ecosystem Coverage Model, 06 Safety And Audit Controls, 07 Production Readiness And Smoke Tests, 08 PostgreSQL Schema Namespace And Migrations, 09 Nightly PostgreSQL Backup To MinIO, 10 Configurable Cron Schedule Policies, 11 Restore From MinIO And Verify, 12 NotificationsModule Integration, 13 LoggingModule Integration, 14 Durability Evidence UI, 15 Disaster Recovery Catalog UI, 15 Disaster Recovery Catalog UI
-- Running goals: none
-- Blocked goals: none
+- Running goals: 16 (implemented-awaiting-deployment)
+- Blocked goals: MinIO bucket execution [MISSING: approved independent storage target and isolated restore plan]
 - Worker threads: none
 - Agent entrypoint: `AGENTS.md`
 - Orchestrator prompt: `docs/IMPLEMENTATION_ORCHESTRATOR.md`
@@ -38,7 +40,7 @@ BACKUPS ORCHESTRATOR: implement goal number N
 - Project invariants: `docs/process/PROJECT_INVARIANTS.md`
 - Process gates: `docs/process/OPERATIONAL_GATES.md`
 - Branch workflow: `docs/orchestration/branch-workflow.md`
-- Deployment status: deployed after owner instruction; image `localhost:5000/backups-microservice:5365c98f`; authenticated smoke passed for BAK-G15 disaster recovery catalog rollout
+- Deployment status: production currently runs `localhost:5000/backups-microservice:a0d1e9f`; BAK-G16 is not committed or deployed by explicit task instruction
 - Commit policy: do not commit or push unless the owner explicitly asks
 
 ## Goal Roadmap
@@ -59,7 +61,8 @@ BACKUPS ORCHESTRATOR: implement goal number N
 | 12 | `implementation-goals/GOAL-12-notifications-integration.md` | done | `codex/backups-notifications-integration` | 11 | Deployed after owner approval in notification/logging rollout |
 | 13 | `implementation-goals/GOAL-13-logging-integration.md` | done | `codex/backups-logging-integration` | 12 | Deployed after owner approval in notification/logging rollout |
 | 14 | `implementation-goals/GOAL-14-durability-evidence-ui.md` | done | `main` | 13 | Database and Vault sanitized evidence UI complete |
-| 15 | `implementation-goals/GOAL-15-disaster-recovery-catalog-ui.md` | done | `codex/backups-phase1-catalog-support` | 14, Phase 0 DR catalog | Deployment pending owner approval |
+| 15 | `implementation-goals/GOAL-15-disaster-recovery-catalog-ui.md` | done | `codex/backups-phase1-catalog-support` | 14, Phase 0 DR catalog | Deployed and smoke validated |
+| 16 | `implementation-goals/GOAL-16-postgres-execution-repair.md` | implemented-awaiting-deployment | `main` working tree | 09 | Source/tests validated; no commit or deploy |
 
 ## Execution Waves
 
@@ -151,4 +154,9 @@ Next command:
 
 ## Next Action
 
-Owner review and deployment approval for BAK-G15 if the live dashboard should display the Phase 0 disaster-recovery catalog.
+Review the BAK-G16 working-tree diff, then commit and deploy in a separate authorized action. After rollout, verify one backup run and check `GET /health/restore-readiness`: if the production `restore_requests` catalog holds duplicate active requests per target, the serialization index will not install and restores will correctly stay refused with 503 until the duplicates are resolved. Any production restore remains separately human-approved and out of scope.
+
+
+2026-08-30: Diagnosed BAK-G16 from production metadata and runtime help. Scheduled runs fail because the deployed WAL-G 3.0.3 binary rejects the nonexistent `pgbackup` command; the image also lacks `pg_dump`. Implemented a streamed `pg_dump` custom archive to `wal-g st put --read-stdin`, added PostgreSQL client tools, deterministic object paths, and verified-backup-aware exact-object retention. Full tests/build and validation image checks passed. ESLint could not run because the repository has no ESLint configuration. No production backup, restore, deletion, record mutation, deployment, commit, push, secret output, or raw backup-content access occurred. Restore source now uses supported `wal-g st cat` to `pg_restore`; an isolated synthetic round trip passed, but production remains unvalidated until deployment. MinIO bucket targets remain contract-only under Phase 5; wisdom-quotes metadata registration already exists.
+
+2026-08-31: Repaired four remaining BAK-G16 HIGH review findings. Retention and restore now share a transaction-scoped advisory lock keyed by backup run, and retention rechecks pinned state while holding it immediately before deleting. The verified safety anchor must be proven present by an exact-object `wal-g st ls` probe that never downloads the dump; `absent` or `unknown` defers cleanup. Restore acceptance fails closed with 503 whenever `uq_restore_requests_active_target` is not proven installed, with a dedicated `/health/restore-readiness` endpoint and an optional strict startup policy. Restore request and audit persistence are atomic under the lock, and a reconciliation worker re-dispatches adoptable PENDING requests and terminally fails abandoned or stale ones after a restart, never re-executing an interrupted destructive restore. Full Jest 18 suites / 175 tests, `nest build`, `tsc --noEmit`, `git diff --check`, JSON/JS/shell parses, and a 27/27 isolated PostgreSQL 15 + MinIO synthetic round trip all passed. No commit, push, deployment, production database, bucket, record, or secret was touched.

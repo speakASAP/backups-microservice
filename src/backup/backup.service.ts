@@ -13,7 +13,7 @@ import {
 } from './entities/backup-run.entity';
 import { BackupJob } from '../jobs/entities/backup-job.entity';
 import { JobsService } from '../jobs/jobs.service';
-import { WalgWrapperService } from './walg-wrapper.service';
+import { logicalBackupObjectName, logicalBackupStoragePath, WalgEnv, WalgWrapperService } from './walg-wrapper.service';
 import { RetentionService } from '../retention/retention.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
@@ -72,7 +72,6 @@ export class BackupService implements OnModuleInit {
         verification_reason: 'Backup is still running; restore verification has not started.',
         triggered_by: triggeredBy,
         started_at: new Date(),
-        storage_path: `${job.storage_prefix || job.target?.database_name}/${new Date().toISOString()}`,
       }),
     );
 
@@ -95,16 +94,42 @@ export class BackupService implements OnModuleInit {
     });
 
     const dbPassword = process.env.DB_PASSWORD || '';
-    const env = this.walg.buildEnv(job, job.target, dbPassword);
     let output = '';
+    let env: WalgEnv;
+    let objectName: string;
+    try {
+      env = this.walg.buildEnv(job, job.target, dbPassword);
+      objectName = logicalBackupObjectName(run.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Backup execution parameters were rejected.';
+      run.completed_at = new Date();
+      run.status = BackupRunStatus.FAILED;
+      run.error_message = message.slice(-500);
+      this.markVerificationSkipped(run, 'Backup was rejected before any process started.');
+      await this.runRepo.save(run);
+      await this.notifications.backupFailed(job.name, {
+        job_id: job.id,
+        run_id: run.id,
+        error: run.error_message,
+      });
+      this.logger.operation({
+        event: 'backup.run.rejected',
+        level: 'error',
+        message: `Backup run rejected for job ${job.name}`,
+        context: 'BackupService',
+        metadata: { job_id: job.id, run_id: run.id, error: run.error_message },
+      });
+      return run;
+    }
 
-    const result = await this.walg.backupPush(env, (chunk) => { output += chunk; });
+    const result = await this.walg.backupPush(env, objectName, (chunk) => { output += chunk; });
 
     run.walg_output = output;
     run.completed_at = new Date();
 
     if (result.exitCode === 0) {
       run.status = BackupRunStatus.SUCCESS;
+      run.storage_path = logicalBackupStoragePath(env.WALG_S3_PREFIX, objectName);
       this.markVerificationPending(run, 'No isolated restore verification runner is configured yet.');
       await this.runRepo.save(run);
       await this.jobsService.updateLastRunAt(jobId);

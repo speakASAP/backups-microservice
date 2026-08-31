@@ -1,11 +1,12 @@
 import { IsString, IsInt, IsOptional, IsBoolean, Min, Max, IsEnum } from 'class-validator';
 import { RestoreClass, SourceCategory, TargetCriticality } from '../entities/backup-target.entity';
+import { IsSafeDatabaseName } from '../../common/database-name';
 
 export class CreateTargetDto {
   @IsString() name: string;
   @IsString() host: string;
   @IsInt() @Min(1) @Max(65535) port: number = 5432;
-  @IsString() database_name: string;
+  @IsString() @IsSafeDatabaseName() database_name: string;
   @IsOptional() @IsString() vault_secret_ref?: string;
   @IsOptional() @IsString() service_owner?: string;
   @IsOptional() @IsEnum(SourceCategory) source_category?: SourceCategory;

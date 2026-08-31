@@ -2,6 +2,7 @@ import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { DataSource } from 'typeorm';
 import { Public } from '../auth/roles.decorator';
+import { SchemaReadinessService } from '../schema/schema-readiness.service';
 
 type ReadinessCheck = {
   status: 'ready' | 'degraded' | 'not_ready';
@@ -11,7 +12,10 @@ type ReadinessCheck = {
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly schemaReadiness: SchemaReadinessService,
+  ) {}
 
   @Public()
   @Get()
@@ -31,6 +35,7 @@ export class HealthController {
       this.checkDatabase(),
       this.checkStorage(),
     ]);
+    const restoreSerialization = this.checkRestoreSerialization();
     const ready = database.status === 'ready' && storage.status === 'ready';
 
     if (!ready) response.status(HttpStatus.SERVICE_UNAVAILABLE);
@@ -43,6 +48,48 @@ export class HealthController {
       checks: {
         database,
         storage,
+        restore_serialization: restoreSerialization,
+      },
+    };
+  }
+
+  /**
+   * Restore serialization is reported on its own endpoint rather than through the
+   * pod readiness gate. Losing the per-target unique index must stop destructive
+   * restores - which it does, with a 503 from this endpoint and from the restore
+   * API - but it must not remove the service from its Service endpoints, because
+   * that would also stop the scheduled backups that protect the same data.
+   */
+  @Public()
+  @Get('restore-readiness')
+  restoreReadiness(@Res({ passthrough: true }) response: Response) {
+    const restoreSerialization = this.checkRestoreSerialization();
+    const ready = restoreSerialization.status === 'ready';
+
+    if (!ready) response.status(HttpStatus.SERVICE_UNAVAILABLE);
+
+    return {
+      success: ready,
+      status: ready ? 'ready' : 'degraded',
+      timestamp: new Date().toISOString(),
+      service: 'backups-microservice',
+      checks: {
+        restore_serialization: restoreSerialization,
+      },
+    };
+  }
+
+  private checkRestoreSerialization(): ReadinessCheck {
+    const state = this.schemaReadiness.getRestoreSerializationState();
+    return {
+      status: state.ready ? 'ready' : 'degraded',
+      message: state.reason,
+      details: {
+        index_installed: state.ready,
+        duplicate_active_targets: state.duplicate_targets,
+        checked_at: state.checked_at,
+        restores_accepted: state.ready,
+        blocks_pod_readiness: false,
       },
     };
   }

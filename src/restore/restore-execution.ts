@@ -1,22 +1,47 @@
-import * as path from 'path';
 import { BadRequestException } from '@nestjs/common';
+import { logicalBackupObjectName } from '../backup/walg-wrapper.service';
+import { assertSafeDatabaseName } from '../common/database-name';
 import { BackupRun, BackupRunStatus } from '../backup/entities/backup-run.entity';
+import { BackupTarget, SourceCategory } from '../targets/entities/backup-target.entity';
 
-const RESTORE_ROOT = '/tmp/backups-restore';
-
-export function restoreWorkingDirectory(requestId: string): string {
-  if (!/^[0-9a-f-]{36}$/i.test(requestId)) {
-    throw new BadRequestException('Invalid restore request ID for restore working directory.');
-  }
-  return path.join(RESTORE_ROOT, requestId);
+export interface LogicalRestoreLocation {
+  storagePrefix: string;
+  objectName: string;
 }
 
-export function walGBackupName(run: BackupRun): string {
-  const output = run.walg_output || '';
-  const match = output.match(/backup_name[:=]\s*([^\s]+)/i)
-    || output.match(/name[:=]\s*([^\s]+)/i)
-    || output.match(/Backup\s+([A-Za-z0-9_\-T:.Z]+)/i);
-  return match?.[1] || 'LATEST';
+export function logicalRestoreLocation(run: BackupRun): LogicalRestoreLocation {
+  if (!run.storage_path) {
+    throw new BadRequestException('Backup run has no logical backup object path.');
+  }
+
+  let objectName: string;
+  try {
+    objectName = logicalBackupObjectName(run.id);
+  } catch {
+    throw new BadRequestException('Backup run ID is invalid for logical restore.');
+  }
+
+  const suffix = `/${objectName}`;
+  if (!run.storage_path.startsWith('s3://') || !run.storage_path.endsWith(suffix)) {
+    throw new BadRequestException('Backup run storage path does not match its deterministic logical object.');
+  }
+
+  const storagePrefix = run.storage_path.slice(0, -suffix.length);
+  if (!storagePrefix) {
+    throw new BadRequestException('Backup run storage prefix is invalid.');
+  }
+
+  return { storagePrefix, objectName };
+}
+
+export function assertPostgresRestoreTarget(target: BackupTarget): void {
+  if ((target.source_category || SourceCategory.POSTGRES_DATABASE) !== SourceCategory.POSTGRES_DATABASE) {
+    throw new BadRequestException('Restore execution is only implemented for postgres_database targets.');
+  }
+  if (!target.database_name) {
+    throw new BadRequestException('PostgreSQL restore target database is required.');
+  }
+  assertSafeDatabaseName(target.database_name, 'Restore target');
 }
 
 export function assertRestorableRun(run: BackupRun): void {

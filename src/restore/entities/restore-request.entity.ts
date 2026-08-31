@@ -22,6 +22,7 @@ export class RestoreRequest {
   @Column({ type: 'uuid', nullable: true }) approval_confirmed_backup_run_id: string;
   @Column({ type: 'boolean', default: false }) production_restore_approved: boolean;
   @Column({ type: 'timestamptz', nullable: true }) approved_at: Date;
+  @Column({ type: 'varchar', length: 200, nullable: true }) idempotency_key: string;
   @Column({ type: 'timestamptz', nullable: true }) started_at: Date;
   @Column({ type: 'timestamptz', nullable: true }) completed_at: Date;
   @Column({ type: 'text', nullable: true }) error_message: string;

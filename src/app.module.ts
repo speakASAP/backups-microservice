@@ -19,6 +19,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { AuditModule } from './audit/audit.module';
+import { CommonModule } from './common/common.module';
 import { SchemaReadinessModule } from './schema/schema-readiness.module';
 import { getDatabaseSchema } from './config/database';
 
@@ -40,6 +41,7 @@ import { getDatabaseSchema } from './config/database';
     }),
     AuthModule,
     LoggerModule,
+    CommonModule,
     AuditModule,
     TargetsModule,
     JobsModule,

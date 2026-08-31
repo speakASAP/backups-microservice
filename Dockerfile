@@ -12,8 +12,8 @@ FROM node:24-slim
 
 WORKDIR /app
 
-# Install WAL-G 3.0.3 pgbackup (logical dump mode — no PGDATA required)
-RUN apt-get update && apt-get install -y curl ca-certificates --no-install-recommends \
+# Install PostgreSQL logical dump tools and WAL-G object-storage transport.
+RUN apt-get update && apt-get install -y curl ca-certificates postgresql-client --no-install-recommends \
   && curl -fsSL https://github.com/wal-g/wal-g/releases/download/v3.0.3/wal-g-pg-ubuntu-20.04-amd64 \
        -o /usr/local/bin/wal-g \
   && chmod +x /usr/local/bin/wal-g \

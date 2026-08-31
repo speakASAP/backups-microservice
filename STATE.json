@@ -13,11 +13,11 @@
     "next_ready_goal_ids": [],
     "blocked_goal_ids": [],
     "active_workstream_ids": [],
-    "last_updated_at": "2026-08-30T21:22:43Z"
+    "last_updated_at": "2026-08-31T06:40:00Z"
   },
   "delivery": {
-    "last_validation_id": "WAVE0-VAL-20260830",
-    "last_validation_status": "validated",
+    "last_validation_id": "VAL-BAK-G16-REPAIR-R2-20260831",
+    "last_validation_status": "validated-source-awaiting-review",
     "validation_debt_count": 0,
     "last_deployment_commit": "5365c98f"
   },
@@ -30,12 +30,15 @@
   "project": "backups-microservice",
   "lifecycle": "active",
   "health": "GET /health returns 200 with status ok",
-  "activeTask": "IPS canonical adoption bootstrap completed",
-  "lastUpdated": "2026-08-30T21:22:43Z",
+  "activeTask": "BAK-G16 second HIGH review round (run lock, storage proof, fail-closed restore gate, stranded-restore reconciliation) implemented and validated; awaiting owner review, commit, and deployment",
+  "lastUpdated": "2026-08-31T06:40:00Z",
   "deployment": {
     "status": "validated on commit 5365c98f"
   },
-  "blockers": [],
+  "blockers": [
+    "BAK-G16 repair is uncommitted and undeployed; production still runs the pre-repair image.",
+    "Unknown whether the production restore_requests catalog is free of duplicate active requests, so restores may start in the fail-closed 503 state after rollout until /health/restore-readiness is checked."
+  ],
   "followUps": [
     "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria."
   ]

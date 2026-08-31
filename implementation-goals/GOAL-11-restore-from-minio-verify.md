@@ -26,3 +26,8 @@ Harden restore execution from MinIO/WAL-G and record restore verification eviden
 - Do not run a production restore during implementation.
 - Do not delete backup runs or artifacts.
 - Do not expose WAL-G output or storage paths in public responses.
+
+
+## 2026-08-30 Status Correction
+
+BAK-G16 replaces unsupported `pgbackup-fetch` with deterministic `wal-g st cat` retrieval streamed into `pg_restore`, preserving exact approval and target checks. A synthetic isolated PostgreSQL round trip passes; production remains unchanged until deployment, and no production restore was run.
