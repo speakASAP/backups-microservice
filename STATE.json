@@ -25,5 +25,18 @@
     "profile": "ips-full",
     "artifact_index": "docs/registry/ARTIFACT_INDEX.json",
     "status_source": "human-and-agent-maintained"
-  }
+  },
+  "schemaVersion": 1,
+  "project": "backups-microservice",
+  "lifecycle": "active",
+  "health": "GET /health returns 200 with status ok",
+  "activeTask": "IPS canonical adoption bootstrap completed",
+  "lastUpdated": "2026-08-30T21:22:43Z",
+  "deployment": {
+    "status": "validated on commit 5365c98f"
+  },
+  "blockers": [],
+  "followUps": [
+    "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria."
+  ]
 }

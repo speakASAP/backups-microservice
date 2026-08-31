@@ -147,3 +147,23 @@ curl -X POST https://backups.alfares.cz/api/backups/trigger
 - Do not delete backup runs or perform production restore without explicit human approval and recorded reason
 - Do not mark a goal complete without validation evidence or a recorded blocker
 - Do not write code from vague intent; preserve `Original Intent -> Goal Impact -> Execution Plan -> Context Package -> Coding Prompt -> Code -> Validation -> Evidence`
+
+## Authority
+
+The project owner approves policy, secrets, production restore, and retention exceptions. Agents may create targets/jobs and trigger backups, but cannot delete backup runs or restore production without human approval.
+
+## Intent Preservation System
+
+Preserve `Vision -> Goal Impact -> System -> Feature -> Task -> Execution Plan -> Coding Prompt -> Code -> Validation`. Detailed rules remain in `docs/orchestrator/INTENT.md`; canonical summary is `docs/17_governance/PROJECT_INVARIANTS.md`.
+
+## Safety and Operations
+
+Keep secrets in Vault/Kubernetes references, preserve restore evidence, and require approval for retention below three full backups.
+
+## Project-Specific Rules
+
+Future target types must preserve PostgreSQL behavior. Production restores require target, backup run, actor, and reason evidence.
+
+## Required Final Report
+
+Report files changed, validation evidence, debt, blockers, deviations, and next action.

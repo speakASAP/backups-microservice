@@ -10,6 +10,10 @@ All agents must preserve:
 Vision -> Goal Impact -> System -> Feature -> Task -> Execution Plan -> Coding Prompt -> Code -> Validation
 ```
 
+## Roles
+
+Readiness scanners classify work, workers implement bounded goals, monitors protect ownership, and integration validators record evidence.
+
 ## Agent Roles
 
 - Readiness scanner: classifies work as ready now, dependency-gated, blocked, active elsewhere, complete, or needs owner input. It does not implement.
@@ -52,12 +56,20 @@ Use `docs/orchestrator/VALIDATION_DEBT.md`, `docs/intent-preservation/VALIDATION
 
 Validation debt does not excuse current-task failures. If a failure touches current-task files or acceptance criteria, treat it as blocking.
 
+## Handoff
+
+Handoffs record goal, traceability, files, validation, debt decision, blockers, and next action in state artifacts.
+
+## Project-Specific Operations
+
+Review backup intent and invariants before backup, retention, or restore changes. Do not expose secrets, delete backup runs, or restore production without documented human approval.
+
 ## Remote/Secret Safety
 
 - Do not copy remote repository contents into local user directories.
 - Deploy only under pre-existing human-approved project or ecosystem policy; agents cannot self-authorize by editing policy.
 - Do not print secrets, tokens, raw production data, customer identifiers, or private evidence.
-- Use `[MISSING: ...]` or `[UNKNOWN: ...]` instead of inventing facts.
+- Record concrete open questions in the relevant state or system artifact instead of inventing facts.
 
 ## Final Report
 

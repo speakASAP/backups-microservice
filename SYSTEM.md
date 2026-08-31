@@ -1,46 +1,58 @@
-# SYSTEM.md — backups-microservice
+# System: backups-microservice
 
-## Service Identity
-
-| Property | Value |
-|----------|-------|
-| Name | backups-microservice |
-| Port | 3398 |
-| Domain | backups.alfares.cz |
-| Namespace | statex-apps |
-| Type | infra |
-| Stack | NestJS, TypeScript, PostgreSQL |
-
-## Deployment
-
-```bash
-./scripts/deploy.sh
-/home/ssf/Documents/Github/shared/scripts/wait-for-rollout.sh -n statex-apps backups-microservice
-kubectl logs -f deploy/backups-microservice -n statex-apps
+```yaml
+id: SYSTEM-backups-microservice
+status: reviewed
+owner: backups-microservice
+created: 2026-08-30
+last_updated: 2026-08-30
+completeness_level: complete
+upstream:
+  - BUSINESS.md
+  - docs/orchestrator/INTENT.md
+downstream:
+  - docs/06_architecture/INTEGRATION_CONTRACT.md
+  - docs/17_governance/PROJECT_INVARIANTS.md
 ```
 
-## Environment Variables
+## Purpose
 
-| Variable | Source | Purpose |
-|----------|--------|---------|
-| PORT | ConfigMap | Listen port (3398) |
-| DB_HOST | ConfigMap | PostgreSQL host |
-| DB_PASSWORD | Vault/ESO | Database password |
-| JWT_SECRET | Vault/ESO | JWT validation |
-| MINIO_ACCESS_KEY | Vault/ESO | MinIO credentials |
-| MINIO_SECRET_KEY | Vault/ESO | MinIO credentials |
-| MINIO_BACKUP_BUCKET | ConfigMap | Bucket name |
-| BACKUP_SCHEDULE_DB | ConfigMap | Cron for DB backups |
-| BACKUP_RETENTION_DAYS | ConfigMap | Retention period |
+`backups-microservice` is the NestJS disaster-recovery control plane for backup orchestration and restore evidence, deployed in `statex-apps` on port 3398 at `backups.alfares.cz`.
 
-## Health
+## Responsibilities
 
-```
-GET /health → 200 { status: "ok" }
-```
+- Manage backup targets, jobs, runs, restore jobs, verification state, retention guardrails, and operator status.
+- Stream PostgreSQL logical archives from `pg_dump` through WAL-G storage commands to MinIO-compatible storage and retrieve approved objects with `wal-g st cat` for `pg_restore`.
+- Persist service state in the PostgreSQL `backups` schema (`backup_jobs`, `backup_runs`, and `restore_jobs`) with manual migrations and `synchronize: false`.
 
-## Database Schema
+## Non-Responsibilities
 
-PostgreSQL schema: `backups`
-Tables: `backup_jobs`, `backup_runs`, `restore_jobs`
-Migrations run manually — `synchronize: false`
+The service does not own protected business data, PostgreSQL or MinIO runtime, Vault secret values, or Auth identity policy. It must not enable unapproved production restore or agent deletion of backup runs.
+
+## Inputs
+
+Authenticated backup and restore requests, configured schedules, PostgreSQL source connection data, and MinIO-compatible storage configuration. JWT, database, and MinIO credentials are delivered through Vault/External Secrets Operator.
+
+## Outputs
+
+Backup-run and restore-job evidence, restore-verification state, retention outcomes, operator-facing status, and success/failure notifications.
+
+## Dependencies
+
+PostgreSQL supplies the `backups` schema and protected database sources. MinIO-compatible storage receives archive objects. Auth validates management JWTs. Notifications report backup outcomes. Logging, docs-rag, and monitoring are mandatory ecosystem services; health is exposed at `GET /health`.
+
+## Upstream Traceability
+
+`BUSINESS.md`, `docs/00_constitution/CONSTITUTION.md`, `docs/01_vision/VISION.md`, and the detailed safety contract in `docs/orchestrator/INTENT.md` define the service purpose and boundaries.
+
+## Downstream Artifacts
+
+`docs/06_architecture/INTEGRATION_CONTRACT.md`, `docs/17_governance/PROJECT_INVARIANTS.md`, implementation goals, and `docs/orchestrator/VALIDATION_DEBT.md` carry implementation and validation decisions.
+
+## Validation Criteria
+
+`GET /health` returns `200 { status: "ok" }`. Targeted tests validate WAL-G object handling, restore execution, retention, and restore behavior. The IPS profile is validated with `validate_adoption_profile.py --phase planning`.
+
+## Open Questions
+
+The repository documents the need to meet RPO/RTO objectives but contains no owner-approved numeric RPO or RTO target. The project owner must define those targets before they can become an operational acceptance threshold.

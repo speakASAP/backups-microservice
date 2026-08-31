@@ -15,7 +15,7 @@ Record known validation failures that are not caused by the current task, so age
 
 | ID | Date | Command | Failure Summary | Scope | Owner | Blocks Current Task? | Unblock Condition | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| VD-001 | YYYY-MM-DD | `[command]` | `[sanitized failure]` | repo-wide / task-specific / external service | `[owner]` | yes/no | `[required fix or approval]` | `[report path or safe excerpt]` |
+| VD-002 | 2026-08-30 | `./node_modules/.bin/eslint <changed files>` | ESLint 8.57.1 found no repository configuration file. | repo-wide tooling | backups-microservice | no | Add or restore an approved ESLint configuration before treating lint as an executable gate. | BAK-G16 session output; build/tests pass. |
 
 ## Current-Task Decision Checklist
 
@@ -25,7 +25,7 @@ Record known validation failures that are not caused by the current task, so age
 - Did the failure exist before this task started?
 - Is the validation command required by the current task acceptance criteria?
 
-## Agent Reporting Format
+## Update Format
 
 ```text
 Validation debt check:
@@ -36,4 +36,4 @@ Validation debt check:
 - Next action:
 ```
 
-Next step: Keep entries current whenever validation failures are classified as out of scope.
+Use the `## Entries` table for each classified out-of-scope failure: date, command, sanitized summary, scope, owner, current-task impact, unblock condition, and safe evidence location. Keep entries current whenever failures are classified as out of scope.
