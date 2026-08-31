@@ -1,17 +1,14 @@
 # TASKS.md - backups-microservice
 
 ## Active
-
 - [ ] BAK-G16 HIGH-review follow-up is source-validated but uncommitted and undeployed. Review the stream-completion, exact-object deletion, retention pinning, database-name, idempotency, and schema-proof changes before any commit or rollout.
 
 ## Ready Next
-
 - Define numeric RPO/RTO targets with the project owner.
 - Design an automated isolated restore-verification runner so successful backup
   runs can move from `pending` to `verified` without restoring over production.
 
 ## Blocked
-
 - An approved independent storage target and isolated restore plan for MinIO
   application buckets are not yet available. Do not implement same-cluster copies as
   independent disaster-recovery coverage.
