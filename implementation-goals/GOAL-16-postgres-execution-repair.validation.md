@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G16
-status: passed-source-awaiting-deployment
+status: production-validated
 validated_artifact: implementation-goals/GOAL-16-postgres-execution-repair.md
 owner: integration-validator
 created: 2026-08-30
@@ -11,7 +11,7 @@ last_updated: 2026-08-31
 
 ## Root Cause Evidence
 
-Production image `localhost:5000/backups-microservice:a0d1e9f` runs WAL-G 3.0.3. Runtime `wal-g --help` has supported `st put`/`st cat` commands but no `pgbackup` or `pgbackup-fetch`. Production backup-run metadata from 2026-08-11 through 2026-08-30 contains the `pgbackup` error and verification status `skipped`. The deployed image also has no `pg_dump` or `pg_restore`.
+Initial production image `localhost:5000/backups-microservice:a0d1e9f` ran WAL-G 3.0.3. Runtime `wal-g --help` has supported `st put`/`st cat` commands but no `pgbackup` or `pgbackup-fetch`. Production backup-run metadata from 2026-08-11 through 2026-08-30 contains the `pgbackup` error and verification status `skipped`. The deployed image also has no `pg_dump` or `pg_restore`.
 
 ## Implemented
 
@@ -113,15 +113,22 @@ Modified: `src/backup/walg-wrapper.service.ts`, `src/retention/retention.service
   - Degraded schema: with duplicate active requests the index was not installed, the state reported one duplicate target, restore traffic was refused with 503, the catalog proof reported `installed=false`, the strict policy refused startup, clearing duplicates installed the index, the database itself rejected a second active restore for the target with `uq_restore_requests_active_target`, and a terminal request freed the slot.
 - No production host, database, bucket, backup record, restore request, secret, or deployment was touched. All validation containers, the private network, the validation image, the pulled MinIO image, and every scratch file were removed; the pre-existing `postgres:15-alpine` image was left in place.
 
+## Production Closure (2026-08-31)
+
+- Commit `be82d39` is deployed Ready `1/1`.
+- `GET /health/restore-readiness` is healthy; both partial unique indexes exist and duplicate active restore targets are zero.
+- The missing private `backups` bucket was created and the stale MinIO identity was rotated through Vault/ESO to a dedicated bucket-scoped credential.
+- `Nightly PostgreSQL backup: wisdom_quotes` is enabled at `02:15 UTC`. Run `6e1db2e6-01d2-4fa1-94a1-bc508ad6bb0b` succeeded and produced a 30,561-byte deterministic object.
+- The object restored into a disposable database at Alembic revision `8f2a41c7d3b5`; the scratch database was removed and production was not modified.
+
 ## Remaining Blockers
 
-- Production still runs the old image until a separate reviewed commit/deployment.
-- No production backup was triggered, so end-to-end MinIO upload evidence must be collected after rollout.
-- [UNKNOWN: production catalog cleanliness] Whether the production `restore_requests` catalog currently holds duplicate active requests per target is unverified, so it is unknown whether `uq_restore_requests_active_target` will install on first rollout or whether restores will start in the degraded 503 state. Check `/health/restore-readiness` immediately after deployment.
+- `[MISSING: approved independent storage target and isolated restore plan for MinIO application buckets]`.
+- Automated isolated restore verification is not configured, so successful runs remain conservatively `pending` even after independent restore proof.
 
 ## Intent Compliance Report
 
 - Goal: repair scheduled PostgreSQL execution without broadening unsafe source support.
 - Boundaries: no secrets, raw backup contents, production record mutations, backups, restores, deletions, deployment, commit, push, wisdom-quotes edits, or shared edits.
 - Deviation: validation report was finalized after source implementation rather than created as an empty shell before coding; all other required pre-coding artifacts existed first.
-- Recommendation: review, commit, and deploy separately; then verify one backup run and retain the existing explicit approval gate for any production restore.
+- Recommendation: keep the explicit approval gate for every production restore and implement automated isolated verification before promoting successful runs from pending to verified.

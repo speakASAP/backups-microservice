@@ -11,15 +11,15 @@
     "status": "done",
     "active_goal_ids": [],
     "next_ready_goal_ids": [],
-    "blocked_goal_ids": [],
+    "blocked_goal_ids": ["MINIO-INDEPENDENT-BACKUP"],
     "active_workstream_ids": [],
-    "last_updated_at": "2026-08-31T06:40:00Z"
+    "last_updated_at": "2026-08-31T07:05:00Z"
   },
   "delivery": {
-    "last_validation_id": "VAL-BAK-G16-REPAIR-R2-20260831",
-    "last_validation_status": "validated-source-awaiting-review",
-    "validation_debt_count": 0,
-    "last_deployment_commit": "5365c98f"
+    "last_validation_id": "VAL-BAK-G16-PRODUCTION-20260831",
+    "last_validation_status": "production-validated",
+    "validation_debt_count": 1,
+    "last_deployment_commit": "be82d39"
   },
   "collection": {
     "profile": "ips-full",
@@ -29,17 +29,30 @@
   "schemaVersion": 1,
   "project": "backups-microservice",
   "lifecycle": "active",
-  "health": "GET /health returns 200 with status ok",
-  "activeTask": "BAK-G16 second HIGH review round (run lock, storage proof, fail-closed restore gate, stranded-restore reconciliation) implemented and validated; awaiting owner review, commit, and deployment",
-  "lastUpdated": "2026-08-31T06:40:00Z",
+  "health": "ready; restore serialization healthy",
+  "activeTask": "No active task; BAK-G16 is complete",
+  "lastCompletedTask": "BAK-G16 PostgreSQL Backup Execution Repair",
+  "lastUpdated": "2026-08-31T07:05:00Z",
   "deployment": {
-    "status": "validated on commit 5365c98f"
+    "status": "ready",
+    "image": "localhost:5000/backups-microservice:be82d39",
+    "readyReplicas": 1,
+    "restoreReadiness": "ready",
+    "duplicateActiveRestoreTargets": 0
+  },
+  "runtimeEvidence": {
+    "wisdomQuotesJob": "9dfda20c-8e7e-4d14-948a-d93e2c70d385",
+    "wisdomQuotesRun": "6e1db2e6-01d2-4fa1-94a1-bc508ad6bb0b",
+    "backupStatus": "success",
+    "objectBytes": 30561,
+    "isolatedRestoreRevision": "8f2a41c7d3b5",
+    "scratchDatabaseRemoved": true
   },
   "blockers": [
-    "BAK-G16 repair is uncommitted and undeployed; production still runs the pre-repair image.",
-    "Unknown whether the production restore_requests catalog is free of duplicate active requests, so restores may start in the fail-closed 503 state after rollout until /health/restore-readiness is checked."
+    "approved independent storage target and isolated restore plan for MinIO application buckets."
   ],
   "followUps": [
-    "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria."
+    "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria.",
+    "Add an automated isolated restore-verification runner; successful backups remain conservatively pending until that lane exists."
   ]
 }
