@@ -17,6 +17,15 @@ Record known validation failures that are not caused by the current task, so age
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | VD-002 | 2026-08-30 | `./node_modules/.bin/eslint <changed files>` | ESLint 8.57.1 found no repository configuration file. | repo-wide tooling | backups-microservice | no | Add or restore an approved ESLint configuration before treating lint as an executable gate. | BAK-G16 session output; build/tests pass. |
 
+## BAK-G16 HIGH-review Follow-up (2026-08-31)
+
+- VD-002 remains the only validation debt; no ESLint configuration was added as
+  part of this bounded safety repair.
+- No new validation debt was created. Focused/full tests, build/typecheck,
+  syntax/JSON/diff gates, validation image, synthetic WAL-G dump/restore, and
+  isolated database concurrency checks all passed after harness fixes were
+  rerun.
+
 ## Current-Task Decision Checklist
 
 - Does the failing command touch files changed by this task?

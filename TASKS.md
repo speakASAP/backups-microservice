@@ -2,7 +2,7 @@
 
 ## Active
 
-- No active PostgreSQL execution-repair task. BAK-G16 is deployed and validated.
+- [ ] BAK-G16 HIGH-review follow-up is source-validated but uncommitted and undeployed. Review the stream-completion, exact-object deletion, retention pinning, database-name, idempotency, and schema-proof changes before any commit or rollout.
 
 ## Ready Next
 
@@ -23,9 +23,10 @@
   logging, dashboard, retention, audit, and restore-serialization controls.
 - [x] BAK-G16 replaced unsupported WAL-G PostgreSQL commands with
   `pg_dump -Fc -> wal-g st put` and `wal-g st cat -> pg_restore`.
-- [x] Stream failure handling, exact-object cleanup, retention anchors,
+- [x] Initial stream failure handling, exact-object cleanup, retention anchors,
   transaction advisory locks, database-name validation, idempotency, and
-  restart reconciliation passed 18 suites / 175 tests.
+  restart reconciliation passed 18 suites / 175 tests in commit `be82d39`.
+- [x] HIGH-review follow-up now waits for `stream.pipeline` completion before success, uses exact `st rm --glob` deletion, pins both PENDING and RUNNING restores, validates idempotent replay payloads, and proves both required unique indexes. Current source passes 18 suites / 181 tests.
 - [x] Commit `be82d39` deployed Ready `1/1`.
 - [x] `/health/restore-readiness` reports ready; required partial unique indexes
   exist and duplicate active restore targets are zero.

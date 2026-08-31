@@ -2,7 +2,7 @@
 
 ```yaml
 id: BAK-G16
-status: deployed-validated
+status: post-review-hardening-awaiting-commit
 owner: integration-validator
 created: 2026-08-30
 last_updated: 2026-08-31
@@ -23,7 +23,8 @@ production proved that WAL-G 3.0.3 provides neither `pgbackup` nor
 - [x] restore inputs and database names are strictly validated.
 - [x] restores are serialized per target and duplicate submissions are idempotent.
 - [x] interrupted pending/running requests are reconciled safely.
-- [x] deployment `be82d39` is Ready and restore readiness is healthy.
+- [x] deployment `be82d39` is Ready and restore readiness is healthy for the prior revision.
+- [x] HIGH-review hardening is source-validated and remains uncommitted/undeployed.
 - [x] a production logical backup object and disposable restore were validated.
 - [x] MinIO application-bucket backup remains explicit blocked platform debt.
 

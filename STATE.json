@@ -8,16 +8,20 @@
     "deployment": "kubernetes"
   },
   "planning": {
-    "status": "done",
-    "active_goal_ids": [],
+    "status": "active",
+    "active_goal_ids": [
+      "BAK-G16-HIGH-REVIEW-FOLLOWUP"
+    ],
     "next_ready_goal_ids": [],
-    "blocked_goal_ids": ["MINIO-INDEPENDENT-BACKUP"],
+    "blocked_goal_ids": [
+      "MINIO-INDEPENDENT-BACKUP"
+    ],
     "active_workstream_ids": [],
-    "last_updated_at": "2026-08-31T07:05:00Z"
+    "last_updated_at": "2026-08-31T07:45:00Z"
   },
   "delivery": {
-    "last_validation_id": "VAL-BAK-G16-PRODUCTION-20260831",
-    "last_validation_status": "production-validated",
+    "last_validation_id": "VAL-BAK-G16-HIGH-REVIEW-20260831",
+    "last_validation_status": "source-validated-awaiting-commit-deploy",
     "validation_debt_count": 1,
     "last_deployment_commit": "be82d39"
   },
@@ -29,10 +33,10 @@
   "schemaVersion": 1,
   "project": "backups-microservice",
   "lifecycle": "active",
-  "health": "ready; restore serialization healthy",
-  "activeTask": "No active task; BAK-G16 is complete",
+  "health": "production ready on be82d39; post-review hardening pending commit/deploy",
+  "activeTask": "BAK-G16 HIGH-review follow-up source-validated",
   "lastCompletedTask": "BAK-G16 PostgreSQL Backup Execution Repair",
-  "lastUpdated": "2026-08-31T07:05:00Z",
+  "lastUpdated": "2026-08-31T07:45:00Z",
   "deployment": {
     "status": "ready",
     "image": "localhost:5000/backups-microservice:be82d39",
@@ -49,9 +53,10 @@
     "scratchDatabaseRemoved": true
   },
   "blockers": [
-    "approved independent storage target and isolated restore plan for MinIO application buckets."
+    "MISSING (unapproved): an independent storage target and isolated restore plan for MinIO application buckets have not yet been approved by the owner."
   ],
   "followUps": [
+    "Review and commit/deploy the uncommitted BAK-G16 HIGH-review hardening in a separate authorized action.",
     "Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria.",
     "Add an automated isolated restore-verification runner; successful backups remain conservatively pending until that lane exists."
   ]

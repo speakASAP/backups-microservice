@@ -182,6 +182,28 @@ describe('RetentionService logical object cleanup', () => {
     expect(logger.operation).toHaveBeenCalledWith(expect.objectContaining({ event: 'retention.cleanup.object_pinned' }));
   });
 
+  it('pins an object referenced by a running restore request', async () => {
+    const runs = [
+      run(NEWEST),
+      run(VERIFIED, { verification_status: VerificationStatus.VERIFIED }),
+      run(EXPIRED),
+      run(EXPIRED_TWO),
+    ];
+    const state = build(runs, { activeRestores: [{ backup_run_id: EXPIRED, status: RestoreStatus.RUNNING }] });
+
+    await state.service.cleanup(job, env);
+
+    expect(state.restoreRepo.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ status: expect.anything(), backup_run_id: expect.anything() }),
+      }),
+    );
+    expect(state.walg.deleteLogicalObject).toHaveBeenCalledTimes(1);
+    expect(state.walg.deleteLogicalObject).toHaveBeenCalledWith(env, `logical/${EXPIRED_TWO}.dump`);
+    expect(runs[2].storage_path).toBe(objectPath(EXPIRED));
+    expect(logger.operation).toHaveBeenCalledWith(expect.objectContaining({ event: 'retention.cleanup.object_pinned' }));
+  });
+
   it('pins an object that is the source of an in-flight verification', async () => {
     const runs = [
       run(NEWEST),

@@ -282,7 +282,7 @@ export class WalgWrapperService {
   async deleteLogicalObject(env: WalgEnv, objectName: string): Promise<WalgResult> {
     const rejection = this.rejectUnsafeObject(objectName);
     if (rejection) return rejection;
-    return this.run(['st', 'rm', objectName], env);
+    return this.run(['st', 'rm', '--glob', objectName], env);
   }
 
   private rejectUnsafeObject(objectName: string, onData?: (chunk: string) => void): WalgResult | null {
@@ -323,6 +323,7 @@ export class WalgWrapperService {
       let consumerDone = false;
       let producerExitCode = 1;
       let consumerExitCode = 1;
+      let streamDone = false;
       let streamFailure = false;
       let resolved = false;
       const escalations: NodeJS.Timeout[] = [];
@@ -369,7 +370,7 @@ export class WalgWrapperService {
       };
 
       const finish = () => {
-        if (resolved || !producerDone || !consumerDone) return;
+        if (resolved || !streamDone || !producerDone || !consumerDone) return;
         resolved = true;
         escalations.forEach((escalation) => clearTimeout(escalation));
         const exitCode = !streamFailure && producerExitCode === 0 && consumerExitCode === 0 ? 0 : 1;
@@ -384,8 +385,8 @@ export class WalgWrapperService {
       consumerProc.stderr.on('data', handle(consumer.name));
 
       pipeline(producerProc.stdout, consumerProc.stdin, (err) => {
-        if (!err) return;
-        failStream(err);
+        streamDone = true;
+        if (err) failStream(err);
         finish();
       });
 

@@ -2,7 +2,7 @@
 
 ```yaml
 id: VAL-BAK-G16
-status: production-validated
+status: post-review-source-validated-awaiting-commit
 validated_artifact: implementation-goals/GOAL-16-postgres-execution-repair.md
 owner: integration-validator
 created: 2026-08-30
@@ -112,6 +112,30 @@ Modified: `src/backup/walg-wrapper.service.ts`, `src/retention/retention.service
   - Lock: keys deterministic per run, two holders of one run lock never overlapped, a bounded wait surfaced `55P03`, different runs did not serialize against each other, and a rolled back holder released the lock immediately.
   - Degraded schema: with duplicate active requests the index was not installed, the state reported one duplicate target, restore traffic was refused with 503, the catalog proof reported `installed=false`, the strict policy refused startup, clearing duplicates installed the index, the database itself rejected a second active restore for the target with `uq_restore_requests_active_target`, and a terminal request freed the slot.
 - No production host, database, bucket, backup record, restore request, secret, or deployment was touched. All validation containers, the private network, the validation image, the pulled MinIO image, and every scratch file were removed; the pre-existing `postgres:15-alpine` image was left in place.
+
+
+## Third HIGH Review Follow-up (2026-08-31)
+
+The six findings were rechecked against the current source. This follow-up remains uncommitted and undeployed; production still runs the previously deployed `be82d39` revision.
+
+- Pipeline success now waits for `stream.pipeline` completion as well as both child closes. Source errors, destination errors, and premature closes force nonzero results and child termination even when both child exit codes are zero. Backup failure cleanup retains exact deterministic-key semantics.
+- `deleteLogicalObject` now invokes `wal-g st rm --glob <logical/uuid.dump>`. The deterministic-name guard rejects prefixes, folders, wildcards, traversal, and child paths before spawn. Isolated MinIO validation proved the exact object is removed while its same-prefix neighbour survives.
+- Retention tests explicitly cover both PENDING and RUNNING restore pins. The locked recheck and VERIFYING pin remain fail-closed. Verified anchors still require an exact deterministic storage path and a positive exact-object probe.
+- Database-name validation remains enforced at DTO, service, target, environment, and restore boundaries.
+- Idempotent replay now verifies that the stored destructive request payload matches the retry. Reuse of a key for a different run, target, actor, approver, reason, or confirmation is rejected. After any PostgreSQL `23505`, the service resolves and validates the idempotency key before deciding whether the race is a replay or active-target conflict.
+- Restore readiness now proves both named indexes are unique, valid, ready indexes on `restore_requests`; a missing idempotency index fails closed alongside a missing active-target index.
+
+Validation evidence:
+
+- Blocker-focused: 6 suites / 123 tests passed.
+- Full: 18 suites / 181 tests passed.
+- `nest build`, `tsc --noEmit -p tsconfig.json`, all tracked JSON parsing, `node --check web/admin/app.js`, every `scripts/*.sh` syntax check, and `git diff --check` passed.
+- Validation image rebuilt under the ecosystem deploy lock with PostgreSQL clients 15.19 and WAL-G 3.0.3.
+- Isolated MinIO plus PostgreSQL round trip passed: WAL-G put/cat matched bytes, exact `--glob` deletion preserved a same-prefix neighbour, and `pg_dump -Fc -> WAL-G -> pg_restore` reproduced the synthetic row.
+- The full migration chain applied to an isolated PostgreSQL 15 database after creating its configured schema. Direct SQL proved the active-target and idempotency unique constraints reject conflicts and terminal status frees the target slot.
+- No production database, object, backup/restore record, secret, pod, deployment, commit, or push was touched. Validation containers, networks, images, and repository scratch paths were removed.
+
+Remaining platform blocker: `[MISSING: approved independent storage target and isolated restore plan for MinIO application buckets]`.
 
 ## Production Closure (2026-08-31)
 

@@ -109,9 +109,31 @@ SELECT
   EXISTS (
     SELECT 1
     FROM pg_class i
-    JOIN pg_namespace n ON n.oid = i.relnamespace
-    WHERE i.relkind = 'i' AND i.relname = $2 AND n.nspname = $1
+    JOIN pg_index ix ON ix.indexrelid = i.oid
+    JOIN pg_class t ON t.oid = ix.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE i.relkind = 'i'
+      AND i.relname = $2
+      AND t.relname = 'restore_requests'
+      AND n.nspname = $1
+      AND ix.indisunique
+      AND ix.indisvalid
+      AND ix.indisready
   ) AS installed,
+  EXISTS (
+    SELECT 1
+    FROM pg_class i
+    JOIN pg_index ix ON ix.indexrelid = i.oid
+    JOIN pg_class t ON t.oid = ix.indrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE i.relkind = 'i'
+      AND i.relname = $3
+      AND t.relname = 'restore_requests'
+      AND n.nspname = $1
+      AND ix.indisunique
+      AND ix.indisvalid
+      AND ix.indisready
+  ) AS idempotency_installed,
   (
     SELECT count(*) FROM (
       SELECT target_id
@@ -187,15 +209,19 @@ export class SchemaReadinessService {
       const rows = await this.dataSource.query(buildRestoreSerializationCheckSql(schema), [
         schema,
         RESTORE_ACTIVE_TARGET_INDEX,
+        RESTORE_IDEMPOTENCY_INDEX,
       ]);
       const row = Array.isArray(rows) ? rows[0] : undefined;
       const installed = row?.installed === true || row?.installed === 't' || row?.installed === 1;
+      const idempotencyInstalled = row?.idempotency_installed === true
+        || row?.idempotency_installed === 't'
+        || row?.idempotency_installed === 1;
       const duplicates = Number(row?.duplicate_targets ?? 0);
 
-      this.restoreSerialization = installed
+      this.restoreSerialization = installed && idempotencyInstalled
         ? {
           ready: true,
-          reason: `${RESTORE_ACTIVE_TARGET_INDEX} is installed and enforcing one active restore per target.`,
+          reason: `${RESTORE_ACTIVE_TARGET_INDEX} and ${RESTORE_IDEMPOTENCY_INDEX} are installed and enforcing restore serialization and idempotency.`,
           checked_at: checkedAt,
           duplicate_targets: Number.isFinite(duplicates) ? duplicates : 0,
         }
@@ -203,7 +229,9 @@ export class SchemaReadinessService {
           ready: false,
           reason: Number.isFinite(duplicates) && duplicates > 0
             ? `${RESTORE_ACTIVE_TARGET_INDEX} could not be installed because ${duplicates} target(s) already hold more than one active restore request.`
-            : `${RESTORE_ACTIVE_TARGET_INDEX} is not installed, so restores cannot be serialized by the database.`,
+            : !installed
+              ? `${RESTORE_ACTIVE_TARGET_INDEX} is not installed as a valid unique index, so restores cannot be serialized by the database.`
+              : `${RESTORE_IDEMPOTENCY_INDEX} is not installed as a valid unique index, so restore retries are not database-idempotent.`,
           checked_at: checkedAt,
           duplicate_targets: Number.isFinite(duplicates) ? duplicates : null,
         };

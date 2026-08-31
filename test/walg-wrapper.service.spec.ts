@@ -140,6 +140,7 @@ describe('WalgWrapperService', () => {
     const resultPromise = service.backupPush(env, objectName);
     await flush();
     dump.stderr.write('connection failed');
+    dump.stdout.destroy();
     dump.emit('close', 1);
     upload.emit('close', null);
 
@@ -147,7 +148,7 @@ describe('WalgWrapperService', () => {
     expect(result.exitCode).toBe(1);
     expect(upload.kill).toHaveBeenCalledWith('SIGTERM');
     expect(result.output).toContain(`partial_object_cleanup: removed ${objectName}`);
-    expect(spawnMock).toHaveBeenLastCalledWith('wal-g', ['st', 'rm', objectName], expect.anything());
+    expect(spawnMock).toHaveBeenLastCalledWith('wal-g', ['st', 'rm', '--glob', objectName], expect.anything());
   });
 
   it('fails the backup pipeline and terminates both children when the stream errors', async () => {
@@ -199,6 +200,32 @@ describe('WalgWrapperService', () => {
     expect(result.exitCode).toBe(1);
     expect(dump.kill).toHaveBeenCalledWith('SIGTERM');
     expect(upload.kill).toHaveBeenCalledWith('SIGTERM');
+  });
+
+  it('cannot resolve success when both children close before a premature stream close is reported', async () => {
+    const dump = mockProcess();
+    const upload = mockProcess();
+    spawnMock
+      .mockReturnValueOnce(dump)
+      .mockReturnValueOnce(upload)
+      .mockImplementation(autoClosingCleanup);
+    const env = service.buildEnv({}, { host: 'db', port: 5432, database_name: 'db' }, 'secret');
+
+    const resultPromise = service.backupPush(env, objectName);
+    await flush();
+    dump.stdout.write(Buffer.from([7, 7, 7]));
+    upload.stdin.destroy();
+
+    // Child close events can arrive before stream.pipeline reports
+    // ERR_STREAM_PREMATURE_CLOSE. They must not win the success race.
+    dump.emit('close', 0);
+    upload.emit('close', 0);
+
+    const result = await resultPromise;
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain('stream failed');
+    expect(result.output).not.toContain('logical_backup_object');
+    expect(spawnMock).toHaveBeenLastCalledWith('wal-g', ['st', 'rm', '--glob', objectName], expect.anything());
   });
 
   it('streams a WAL-G object into pg_restore without buffering archive bytes', async () => {
@@ -266,6 +293,51 @@ describe('WalgWrapperService', () => {
     expect(result.output).not.toContain('logical_restore_object');
   });
 
+
+
+  it('fails the restore pipeline when pg_restore closes its input prematurely despite zero child exits', async () => {
+    const fetch = mockProcess();
+    const restore = mockProcess();
+    spawnMock.mockReturnValueOnce(fetch).mockReturnValueOnce(restore);
+    const env = service.buildEnv({}, { host: 'restore-db', port: 5432, database_name: 'restored' }, 'secret');
+
+    const resultPromise = service.restoreFromObject(env, objectName, 'restored');
+    await flush();
+    fetch.stdout.write(Buffer.from([4, 5, 6]));
+    restore.stdin.destroy();
+    await flush();
+
+    fetch.emit('close', 0);
+    restore.emit('close', 0);
+
+    const result = await resultPromise;
+    expect(result.exitCode).toBe(1);
+    expect(fetch.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(restore.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(result.output).not.toContain('logical_restore_object');
+  });
+
+  it('fails the restore pipeline when the WAL-G source stream errors despite zero child exits', async () => {
+    const fetch = mockProcess();
+    const restore = mockProcess();
+    spawnMock.mockReturnValueOnce(fetch).mockReturnValueOnce(restore);
+    const env = service.buildEnv({}, { host: 'restore-db', port: 5432, database_name: 'restored' }, 'secret');
+
+    const resultPromise = service.restoreFromObject(env, objectName, 'restored');
+    await flush();
+    fetch.stdout.destroy(new Error('synthetic WAL-G source failure'));
+    await flush();
+
+    fetch.emit('close', 0);
+    restore.emit('close', 0);
+
+    const result = await resultPromise;
+    expect(result.exitCode).toBe(1);
+    expect(fetch.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(restore.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(result.output).toContain('stream failed');
+  });
+
   it('refuses to spawn a restore for a non-deterministic object or unsafe database', async () => {
     const env = service.buildEnv({}, { host: 'restore-db', port: 5432, database_name: 'restored' }, 'secret');
 
@@ -297,7 +369,7 @@ describe('WalgWrapperService', () => {
     await flush();
     proc.emit('close', 0);
     await expect(deletion).resolves.toEqual(expect.objectContaining({ exitCode: 0 }));
-    expect(spawnMock).toHaveBeenCalledWith('wal-g', ['st', 'rm', objectName], expect.anything());
+    expect(spawnMock).toHaveBeenCalledWith('wal-g', ['st', 'rm', '--glob', objectName], expect.anything());
   });
 
   describe('probeLogicalObject', () => {

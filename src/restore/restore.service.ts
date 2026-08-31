@@ -22,7 +22,6 @@ import { BackupRunLockService, isLockTimeout } from '../common/backup-run-lock.s
 import { SchemaReadinessService } from '../schema/schema-readiness.service';
 import {
   RESTORE_ACTIVE_TARGET_INDEX,
-  RESTORE_IDEMPOTENCY_INDEX,
 } from './restore-constraints';
 import {
   assertPostgresRestoreTarget,
@@ -133,7 +132,9 @@ export class RestoreService {
 
     const idempotencyKey = restoreIdempotencyKey(dto, requestedBy);
     const replayed = await this.findByIdempotencyKey(idempotencyKey);
-    if (replayed) return this.logReplay(replayed, idempotencyKey);
+    if (replayed) {
+      return this.logReplay(this.assertReplayMatches(replayed, dto, requestedBy, idempotencyKey), idempotencyKey);
+    }
 
     const backupRun = await this.backupService.findOne(dto.backup_run_id);
     const target = await this.targetsService.findOne(dto.target_id);
@@ -162,9 +163,12 @@ export class RestoreService {
       }
       const violation = uniqueViolationTarget(error);
       if (violation === null) throw error;
-      if (violation.includes(RESTORE_IDEMPOTENCY_INDEX) || violation.includes('idempotency_key')) {
-        const existing = await this.findByIdempotencyKey(idempotencyKey);
-        if (existing) return this.logReplay(existing, idempotencyKey);
+      // PostgreSQL may report either unique constraint first when identical
+      // requests race. Always resolve the idempotency key after any 23505 before
+      // translating the collision into an active-target conflict.
+      const existing = await this.findByIdempotencyKey(idempotencyKey);
+      if (existing) {
+        return this.logReplay(this.assertReplayMatches(existing, dto, requestedBy, idempotencyKey), idempotencyKey);
       }
       this.logger.operation({
         event: 'restore.request.serialized',
@@ -176,7 +180,9 @@ export class RestoreService {
       throw new ConflictException('A restore request is already pending or running for this target.');
     }
 
-    if (pin.replayed) return this.logReplay(pin.request, idempotencyKey);
+    if (pin.replayed) {
+      return this.logReplay(this.assertReplayMatches(pin.request, dto, requestedBy, idempotencyKey), idempotencyKey);
+    }
 
     this.executeRestore(pin.request.id).catch((err) =>
       this.logger.error(`Restore execution error: ${err}`, err.stack, 'RestoreService'),
@@ -212,7 +218,12 @@ export class RestoreService {
       // Re-read under the lock: a duplicate submission that lost the race to this
       // point must replay the original request, not collide with it as a conflict.
       const duplicate = await manager.findOne(RestoreRequest, { where: { idempotency_key: idempotencyKey } });
-      if (duplicate) return { request: duplicate, replayed: true };
+      if (duplicate) {
+        return {
+          request: this.assertReplayMatches(duplicate, dto, requestedBy, idempotencyKey),
+          replayed: true,
+        };
+      }
 
       const active = await manager.findOne(RestoreRequest, {
         where: { target_id: dto.target_id, status: In(ACTIVE_RESTORE_STATUSES) },
@@ -256,6 +267,38 @@ export class RestoreService {
   private async findByIdempotencyKey(idempotencyKey: string): Promise<RestoreRequest | null> {
     const existing = await this.repo.findOne({ where: { idempotency_key: idempotencyKey } });
     return existing ?? null;
+  }
+
+  private assertReplayMatches(
+    request: RestoreRequest,
+    dto: CreateRestoreDto,
+    requestedBy: string,
+    idempotencyKey: string,
+  ): RestoreRequest {
+    const matches = request.backup_run_id === dto.backup_run_id
+      && request.target_id === dto.target_id
+      && request.approval_confirmed_backup_run_id === dto.approval_confirmed_backup_run_id
+      && request.approval_confirmed_target_id === dto.approval_confirmed_target_id
+      && request.production_restore_approved === true
+      && clean(request.approval_actor) === clean(dto.approval_actor)
+      && clean(request.approval_reason) === clean(dto.approval_reason)
+      && clean(request.requested_by) === clean(requestedBy);
+
+    if (matches) return request;
+
+    this.logger.operation({
+      event: 'restore.request.idempotency_conflict',
+      level: 'warn',
+      message: 'Restore idempotency key was reused for a different destructive request',
+      context: 'RestoreService',
+      metadata: {
+        request_id: request.id,
+        target_id: request.target_id,
+        backup_run_id: request.backup_run_id,
+        idempotency_key: idempotencyKey,
+      },
+    });
+    throw new ConflictException('Idempotency key already belongs to a different restore request.');
   }
 
   private logReplay(request: RestoreRequest, idempotencyKey: string): RestoreRequest {

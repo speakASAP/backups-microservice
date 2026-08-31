@@ -5,15 +5,18 @@ import {
   SCHEMA_READINESS_SQL,
   SchemaReadinessService,
 } from '../src/schema/schema-readiness.service';
-import { RESTORE_ACTIVE_TARGET_INDEX } from '../src/restore/restore-constraints';
+import {
+  RESTORE_ACTIVE_TARGET_INDEX,
+  RESTORE_IDEMPOTENCY_INDEX,
+} from '../src/restore/restore-constraints';
 
 /** Data source double whose serialization check reports a configurable outcome. */
-function dataSourceWith(check: { installed: boolean; duplicate_targets: number } | Error) {
+function dataSourceWith(check: { installed: boolean; idempotency_installed?: boolean; duplicate_targets: number } | Error) {
   return {
     query: jest.fn(async (sql: string) => {
       if (!sql.includes('pg_class')) return undefined;
       if (check instanceof Error) throw check;
-      return [check];
+      return [{ ...check, idempotency_installed: check.idempotency_installed ?? check.installed }];
     }),
   } as any;
 }
@@ -81,7 +84,7 @@ describe('SchemaReadinessService', () => {
     expect(dataSource.query).not.toHaveBeenCalledWith(buildSchemaReadinessSql('backups'));
     expect(dataSource.query).toHaveBeenCalledWith(
       buildRestoreSerializationCheckSql('backups'),
-      ['backups', RESTORE_ACTIVE_TARGET_INDEX],
+      ['backups', RESTORE_ACTIVE_TARGET_INDEX, RESTORE_IDEMPOTENCY_INDEX],
     );
     expect(service.getRestoreSerializationState().ready).toBe(true);
   });
@@ -110,7 +113,7 @@ describe('SchemaReadinessService restore serialization gate', () => {
     expect(() => service.assertRestoreSerializationReady()).toThrow(ServiceUnavailableException);
   });
 
-  it('accepts restores once the active-target unique index is proven installed', async () => {
+  it('accepts restores once both required unique indexes are proven installed', async () => {
     const service = new SchemaReadinessService(dataSourceWith({ installed: true, duplicate_targets: 0 }));
 
     await service.apply();
@@ -120,6 +123,21 @@ describe('SchemaReadinessService restore serialization gate', () => {
     expect(state.reason).toContain(RESTORE_ACTIVE_TARGET_INDEX);
     expect(state.checked_at).not.toBeNull();
     expect(() => service.assertRestoreSerializationReady()).not.toThrow();
+  });
+
+  it('fails closed when the idempotency index is missing or invalid', async () => {
+    const service = new SchemaReadinessService(dataSourceWith({
+      installed: true,
+      idempotency_installed: false,
+      duplicate_targets: 0,
+    }));
+
+    await service.apply();
+
+    const state = service.getRestoreSerializationState();
+    expect(state.ready).toBe(false);
+    expect(state.reason).toContain(RESTORE_IDEMPOTENCY_INDEX);
+    expect(() => service.assertRestoreSerializationReady()).toThrow(ServiceUnavailableException);
   });
 
   it('fails closed when duplicates prevented the index from being installed', async () => {
@@ -172,6 +190,10 @@ describe('SchemaReadinessService restore serialization gate', () => {
 
     expect(sql).toContain('pg_class');
     expect(sql).toContain("i.relkind = 'i'");
+    expect(sql).toContain('ix.indisunique');
+    expect(sql).toContain('ix.indisvalid');
+    expect(sql).toContain('ix.indisready');
+    expect(sql).toContain("i.relname = $3");
     expect(sql).toContain('"backups"."restore_requests"');
     expect(sql).toContain("WHERE status IN ('pending', 'running')");
   });

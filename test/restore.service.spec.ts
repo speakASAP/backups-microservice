@@ -476,6 +476,22 @@ describe('RestoreService serialization and idempotency', () => {
     );
   });
 
+  it('rejects reuse of an idempotency key for a different destructive request', async () => {
+    const state = createFixture();
+
+    await state.service.create(makeDto({ idempotency_key: 'client-key-1' }), 'operator');
+    await expect(state.service.create(makeDto({
+      idempotency_key: 'client-key-1',
+      approval_reason: 'Approved for a different restore purpose.',
+    }), 'operator')).rejects.toBeInstanceOf(ConflictException);
+
+    expect(state.repo.rows).toHaveLength(1);
+    expect((state.service as any).executeRestore).toHaveBeenCalledTimes(1);
+    expect(state.logger.operation).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'restore.request.idempotency_conflict' }),
+    );
+  });
+
   it('creates exactly one request when identical submissions race', async () => {
     const state = createFixture();
 
