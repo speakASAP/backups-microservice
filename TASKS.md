@@ -1,9 +1,15 @@
 # TASKS.md - backups-microservice
 
+
+# Tasks: backups-microservice
+
 ## Active
+
 - [ ] BAK-G16 HIGH-review follow-up is source-validated but uncommitted and undeployed. Review the stream-completion, exact-object deletion, retention pinning, database-name, idempotency, and schema-proof changes before any commit or rollout.
 
-## Ready Next
+
+## Ready next
+
 - Define numeric RPO/RTO targets with the project owner.
 - Design an automated isolated restore-verification runner so successful backup
   runs can move from `pending` to `verified` without restoring over production.
@@ -11,13 +17,17 @@
 - Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria.
 - Add an automated isolated restore-verification runner; successful backups remain conservatively pending until that lane exists.
 
+
 ## Blocked
+
 - An approved independent storage target and isolated restore plan for MinIO
   application buckets are not yet available. Do not implement same-cluster copies as
   independent disaster-recovery coverage.
 - MISSING (unapproved): an independent storage target and isolated restore plan for MinIO application buckets have not yet been approved by the owner.
 
+
 ## Completed
+
 
 - [x] Canonical IPS adoption and orchestration documentation.
 - [x] PostgreSQL schema, schedules, logical backup, restore, notification,
@@ -38,7 +48,9 @@
   `30,561`-byte deterministic object, and restored into a disposable database
   at Alembic revision `8f2a41c7d3b5`; the scratch database was removed.
 
+
 ## Handoff
+
 
 Read `STATE.json`, `docs/IMPLEMENTATION_STATE.md`, and
 `implementation-goals/GOAL-16-postgres-execution-repair.validation.md` before
