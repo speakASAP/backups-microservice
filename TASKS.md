@@ -7,11 +7,15 @@
 - Define numeric RPO/RTO targets with the project owner.
 - Design an automated isolated restore-verification runner so successful backup
   runs can move from `pending` to `verified` without restoring over production.
+- Review and commit/deploy the uncommitted BAK-G16 HIGH-review hardening in a separate authorized action.
+- Project owner must define numeric RPO/RTO targets before they become operational acceptance criteria.
+- Add an automated isolated restore-verification runner; successful backups remain conservatively pending until that lane exists.
 
 ## Blocked
 - An approved independent storage target and isolated restore plan for MinIO
   application buckets are not yet available. Do not implement same-cluster copies as
   independent disaster-recovery coverage.
+- MISSING (unapproved): an independent storage target and isolated restore plan for MinIO application buckets have not yet been approved by the owner.
 
 ## Completed
 
