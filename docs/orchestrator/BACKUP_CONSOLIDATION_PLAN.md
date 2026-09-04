@@ -69,8 +69,6 @@ Use `/srv/critical-backups` as the physical second-disk mount and create one exp
   pvcs/
     metadata/
     rabbitmq/
-    grafana/
-    prometheus/
   qdrant/
     snapshots/
     restore-tests/

@@ -268,8 +268,9 @@ A backup is not "successful" until all are true:
    - GUI class: `kubernetes_resource`.
 
 6. Kubernetes PVCs
-   - Current PVCs: PostgreSQL, Redis, RabbitMQ, Prometheus, Grafana.
-   - Backup method: prefer application-aware logical backups for PostgreSQL/Redis; file-level backup for RabbitMQ/Grafana/Prometheus if needed; record PVC metadata.
+   - Current PVCs: PostgreSQL, Redis, RabbitMQ. (Prometheus and Grafana PVCs were listed here
+     until the observability stack was retired on 2026-08-27; they no longer exist.)
+   - Backup method: prefer application-aware logical backups for PostgreSQL/Redis; file-level backup for RabbitMQ if needed; record PVC metadata.
    - Restore target: isolated directories or test namespace.
    - GUI class: `pvc`.
 

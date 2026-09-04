@@ -105,5 +105,5 @@ If `/srv/critical-backups/.backup-secret/critical-backups.pass` is unavailable, 
 
 ## Current Gaps
 
-- MinIO/SpeakASAP object data and large Prometheus/Grafana PVC content are not fully copied by the small critical-service runner. They need a separate large-data backup or off-server mirror lane.
+- MinIO/SpeakASAP object data is not fully copied by the small critical-service runner. It needs a separate large-data backup or off-server mirror lane. (The large Prometheus/Grafana PVCs previously listed here no longer exist: the observability stack was retired on 2026-08-27 and its PVCs are gone.)
 - Database logical backup is out of scope here and remains owned by the database backup agent.
