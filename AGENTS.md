@@ -8,11 +8,9 @@ Shared rules live here:
 
 Read those first, then follow the repository-specific notes below and the current planning/status files.
 
-
 ## Repository-Specific Notes
 
 # AGENTS.md — backups-microservice
-
 
 ## Backups Orchestrator Entrypoint
 
@@ -153,11 +151,7 @@ curl -X POST https://backups.alfares.cz/api/backups/trigger
 The project owner approves policy, secrets, production restore, and retention exceptions. Agents may create targets/jobs and trigger backups, but cannot delete backup runs or restore production without human approval.
 
 ## Service-to-service authentication
-Any call this service makes to, or receives from, another service is governed by
-[`auth-microservice/docs/SERVICE_IDENTITY_CONSUMER_STANDARD.md`](../auth-microservice/docs/SERVICE_IDENTITY_CONSUMER_STANDARD.md).
-Read it before writing or debugging a machine call — including a 401 from an internal
-endpoint. New machine paths use an Auth-issued per-pair RS256 service JWT; a shared static
-token is legacy and closed to new adopters.
+For machine service identity, follow the sole canonical [`SERVICE_IDENTITY_CONSUMER_STANDARD.md`](../auth-microservice/docs/SERVICE_IDENTITY_CONSUMER_STANDARD.md). It is not reproduced here.
 
 ## Intent Preservation System
 
