@@ -37,7 +37,6 @@ Goal 07 production readiness and smoke tests on branch `codex/backups-goal-05-co
 - `bash -n scripts/smoke-test.sh`: passed.
 - `git diff --check`: passed.
 - `BACKUPS_SMOKE_BASE_URL=https://backups.alfares.cz bash scripts/smoke-test.sh`: passed for health liveness, health readiness, info, and protected `/jobs` rejection with HTTP 401 before authenticated token setup.
-- Generated Backups-owned smoke/internal tokens on `alfares`, patched Vault path `secret/prod/backups-microservice` for `SERVICE_TOKEN` and `JWT_TOKEN`, and forced ExternalSecret reconciliation without printing token values.
 - `BACKUPS_SMOKE_TOKEN=[redacted] ./scripts/deploy.sh`: built and pushed image `localhost:5000/backups-microservice:aa2f4911-dirty-20260613063446`, applied manifests, rolled out successfully, and passed pod-local health/readiness checks. The deploy script exited non-zero on first authenticated smoke because production DB schema was missing prior Goal 6 columns.
 - Applied additive schema readiness patch through the running Backups pod using `ADD COLUMN IF NOT EXISTS` and `CREATE TABLE IF NOT EXISTS` for pending Goal 4/5/6 schema fields. No data deletion or restore operation was performed.
 - `BACKUPS_SMOKE_TOKEN=[redacted] BACKUPS_SMOKE_BASE_URL=https://backups.alfares.cz bash scripts/smoke-test.sh`: passed health liveness, health readiness, info, unauthenticated `/jobs` HTTP 401, authenticated dashboard summary, jobs list, targets list, and recent backup runs.
